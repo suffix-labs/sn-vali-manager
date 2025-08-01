@@ -34,9 +34,9 @@ spec:
         args:
         - "--http-rpc"
         - "0.0.0.0:9545"
-        - "--rpc-cors-domains"
+        - "--rpc.cors-domains"
         - "*"
-        - "--rpc-websocket"
+        - "--rpc.websocket"
         envFrom:
         - secretRef:
             name: pathfinder-secrets
