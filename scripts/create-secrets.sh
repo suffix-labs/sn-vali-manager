@@ -97,32 +97,32 @@ kubectl create secret generic pathfinder-secrets \
 echo -e "${GREEN}  ✓ pathfinder-secrets created${NC}"
 
 # Generate validator-a secret
-kubectl create secret generic validator-a-secrets \
+kubectl create secret generic suffix-validator-secrets \
     --namespace="$NAMESPACE" \
     --from-literal=STAKER_OPERATIONAL_ADDRESS="$VALIDATOR_A_STAKER_OPERATIONAL_ADDRESS" \
     --from-literal=VALIDATOR_ATTESTATION_OPERATIONAL_PRIVATE_KEY="$VALIDATOR_A_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
 
-echo -e "${GREEN}  ✓ validator-a-secrets created${NC}"
+echo -e "${GREEN}  ✓ suffix-validator-secrets created${NC}"
 
 # Generate validator-b secret  
-kubectl create secret generic validator-b-secrets \
+kubectl create secret generic ethchi-validator-secrets \
     --namespace="$NAMESPACE" \
     --from-literal=STAKER_OPERATIONAL_ADDRESS="$VALIDATOR_B_STAKER_OPERATIONAL_ADDRESS" \
     --from-literal=VALIDATOR_ATTESTATION_OPERATIONAL_PRIVATE_KEY="$VALIDATOR_B_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
 
-echo -e "${GREEN}  ✓ validator-b-secrets created${NC}"
+echo -e "${GREEN}  ✓ ethchi-validator-secrets created${NC}"
 
 echo ""
 echo -e "${GREEN}🎉 Successfully created all Kubernetes secrets!${NC}"
 echo ""
 echo -e "${BLUE}📋 Created secrets in namespace '$NAMESPACE':${NC}"
 echo "  • pathfinder-secrets (Ethereum API access)"
-echo "  • validator-a-secrets (Validator A private key for local signing)"  
-echo "  • validator-b-secrets (Validator B private key for local signing)"
+echo "  • suffix-validator-secrets (Suffix Validator private key for local signing)"  
+echo "  • ethchi-validator-secrets (Ethchi Validator private key for local signing)"
 echo ""
 echo -e "${BLUE}🔍 You can verify the secrets were created with:${NC}"
 echo -e "${YELLOW}  kubectl get secrets -n $NAMESPACE${NC}"

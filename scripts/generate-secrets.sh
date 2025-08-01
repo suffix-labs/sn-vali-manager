@@ -55,7 +55,7 @@ kubectl create secret generic pathfinder-secrets \
     --dry-run=client -o yaml | kubectl apply -f -
 
 # Generate validator-a secret
-kubectl create secret generic validator-a-secrets \
+kubectl create secret generic suffix-validator-secrets \
     --namespace=starknet-node \
     --from-literal=REMOTE_SIGNER_URL="$VALIDATOR_A_REMOTE_SIGNER_URL" \
     --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_A_OPERATIONAL_PRIVATE_KEY" \
@@ -63,7 +63,7 @@ kubectl create secret generic validator-a-secrets \
     --dry-run=client -o yaml | kubectl apply -f -
 
 # Generate validator-b secret  
-kubectl create secret generic validator-b-secrets \
+kubectl create secret generic ethchi-validator-secrets \
     --namespace=starknet-node \
     --from-literal=REMOTE_SIGNER_URL="$VALIDATOR_B_REMOTE_SIGNER_URL" \
     --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_B_OPERATIONAL_PRIVATE_KEY" \
@@ -74,7 +74,7 @@ echo "✅ Successfully generated Kubernetes secrets from .env file"
 echo ""
 echo "Created secrets:"
 echo "  - pathfinder-secrets (contains Ethereum API URL)"
-echo "  - validator-a-secrets (contains signer URL and private key)"
-echo "  - validator-b-secrets (contains signer URL and private key)"
+echo "  - suffix-validator-secrets (Suffix Validator - contains signer URL and private key)"
+echo "  - ethchi-validator-secrets (Ethchi Validator - contains signer URL and private key)"
 echo ""
 echo "You can now deploy the applications with: ./deploy.sh"

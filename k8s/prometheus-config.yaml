@@ -23,23 +23,23 @@ data:
         scrape_interval: 30s
         metrics_path: '/metrics'
 
-      - job_name: 'validator-a'
+      - job_name: 'suffix-validator'
         static_configs:
-          - targets: ['validator-a-service:9090']
+          - targets: ['suffix-validator-service:9090']
         scrape_interval: 30s
         metrics_path: '/metrics'
         relabel_configs:
           - target_label: validator
-            replacement: validator-a
+            replacement: suffix-validator
 
-      - job_name: 'validator-b'
+      - job_name: 'ethchi-validator'
         static_configs:
-          - targets: ['validator-b-service:9091']
+          - targets: ['ethchi-validator-service:9091']
         scrape_interval: 30s
         metrics_path: '/metrics'
         relabel_configs:
           - target_label: validator
-            replacement: validator-b
+            replacement: ethchi-validator
 
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:

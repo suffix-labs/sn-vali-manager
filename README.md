@@ -39,10 +39,10 @@ Edit `.env` file with your actual values:
 # Pathfinder Node - Ethereum WebSocket access
 PATHFINDER_ETHEREUM_API_URL=wss://eth-mainnet.g.alchemy.com/v2/YOUR_ACTUAL_API_KEY
 
-# Validator A - Company 1 (Local Signing)
+# Suffix Validator - Company 1 (Local Signing)
 VALIDATOR_A_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
 
-# Validator B - Company 2 (Local Signing)
+# Ethchi Validator - Company 2 (Local Signing)
 VALIDATOR_B_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
 
 # Optional logging configuration
@@ -107,13 +107,13 @@ kubectl port-forward -n starknet-node svc/pathfinder-service 9545:9545
 
 ### Client Access (Per-Validator Monitoring)
 ```bash
-# Validator A Client Dashboard
-kubectl port-forward -n starknet-node svc/grafana-validator-a-service 3001:3001
-# Credentials: admin/validator-a-pass123 OR anonymous viewer access
+# Suffix Validator Client Dashboard
+kubectl port-forward -n starknet-node svc/grafana-suffix-validator-service 3001:3001
+# Credentials: admin/suffix-validator-pass123 OR anonymous viewer access
 
-# Validator B Client Dashboard  
-kubectl port-forward -n starknet-node svc/grafana-validator-b-service 3002:3002
-# Credentials: admin/validator-b-pass123 OR anonymous viewer access
+# Ethchi Validator Client Dashboard  
+kubectl port-forward -n starknet-node svc/grafana-ethchi-validator-service 3002:3002
+# Credentials: admin/ethchi-validator-pass123 OR anonymous viewer access
 ```
 
 ### Load Balancer Access (if available)
@@ -134,23 +134,23 @@ Complete operational overview for node operator:
 - Attestation counts per validator
 - Network block height
 
-#### Validator A Dashboard (Port 3001)
+#### Suffix Validator Dashboard (Port 3001)
 Client-specific view showing only:
 - Shared pathfinder node health (dependency status)
-- Validator A's specific metrics and performance
-- Validator A's attestation activity
+- Suffix Validator's specific metrics and performance
+- Suffix Validator's attestation activity
 - Current network state
 
-#### Validator B Dashboard (Port 3002)
+#### Ethchi Validator Dashboard (Port 3002)
 Client-specific view showing only:
 - Shared pathfinder node health (dependency status)
-- Validator B's specific metrics and performance
-- Validator B's attestation activity
+- Ethchi Validator's specific metrics and performance
+- Ethchi Validator's attestation activity
 - Current network state
 
 ### Prometheus Targets
 - **Admin URL**: http://localhost:9090
-- **Targets**: pathfinder, validator-a (port 9090), validator-b (port 9091)
+- **Targets**: pathfinder, suffix-validator (port 9090), ethchi-validator (port 9091)
 - Check all targets at: http://localhost:9090/targets
 
 ## Scaling & Resource Management
@@ -159,8 +159,8 @@ Client-specific view showing only:
 Each validator runs independently and can be scaled separately:
 ```bash
 # Scale individual validators
-kubectl scale -n starknet-node deployment/validator-a --replicas=1
-kubectl scale -n starknet-node deployment/validator-b --replicas=1
+kubectl scale -n starknet-node deployment/suffix-validator --replicas=1  # Suffix Validator
+kubectl scale -n starknet-node deployment/ethchi-validator --replicas=1  # Ethchi Validator
 
 # Pathfinder should remain single instance (shared state)
 kubectl scale -n starknet-node deployment/pathfinder --replicas=1
@@ -206,8 +206,8 @@ kubectl logs -n starknet-node deployment/pathfinder
 kubectl get svc -n starknet-node
 
 # Check validator-specific pods
-kubectl get pods -n starknet-node -l validator=validator-a
-kubectl get pods -n starknet-node -l validator=validator-b
+kubectl get pods -n starknet-node -l validator=validator-a  # Suffix Validator
+kubectl get pods -n starknet-node -l validator=validator-b  # Ethchi Validator
 
 # Check persistent volumes
 kubectl get pv,pvc -n starknet-node
@@ -216,8 +216,8 @@ kubectl get pv,pvc -n starknet-node
 kubectl top pods -n starknet-node
 
 # Check validator logs
-kubectl logs -n starknet-node deployment/validator-a
-kubectl logs -n starknet-node deployment/validator-b
+kubectl logs -n starknet-node deployment/suffix-validator  # Suffix Validator
+kubectl logs -n starknet-node deployment/ethchi-validator  # Ethchi Validator
 ```
 
 ## Security Best Practices
@@ -249,8 +249,8 @@ Update container images:
 kubectl set image -n starknet-node deployment/pathfinder pathfinder=eqlabs/pathfinder:v0.x.x
 
 # Update individual validators
-kubectl set image -n starknet-node deployment/validator-a validator-attestation=ghcr.io/eqlabs/starknet-validator-attestation:latest
-kubectl set image -n starknet-node deployment/validator-b validator-attestation=ghcr.io/eqlabs/starknet-validator-attestation:latest
+kubectl set image -n starknet-node deployment/suffix-validator validator-attestation=ghcr.io/eqlabs/starknet-validator-attestation:latest  # Suffix Validator
+kubectl set image -n starknet-node deployment/ethchi-validator validator-attestation=ghcr.io/eqlabs/starknet-validator-attestation:latest  # Ethchi Validator
 
 # Update monitoring stack
 kubectl set image -n starknet-node deployment/grafana-admin grafana=grafana/grafana:latest
@@ -267,8 +267,8 @@ Provide clients with:
 
 ### Client Onboarding Example
 ```bash
-# For Validator A client
+# For Suffix Validator client
 echo "Access your validator dashboard:"
-echo "kubectl port-forward -n starknet-node svc/grafana-validator-a-service 3001:3001" 
+echo "kubectl port-forward -n starknet-node svc/grafana-suffix-validator-service 3001:3001" 
 echo "Then visit http://localhost:3001 (no login required)"
 ```

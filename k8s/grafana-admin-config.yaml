@@ -53,12 +53,12 @@ data:
           },
           {
             "id": 2,
-            "title": "Validator A Status",
+            "title": "Suffix Validator Status",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"validator-a\"}",
-                "legendFormat": "Validator A"
+                "expr": "up{job=\"suffix-validator\"}",
+                "legendFormat": "Suffix Validator"
               }
             ],
             "fieldConfig": {
@@ -78,12 +78,12 @@ data:
           },
           {
             "id": 3,
-            "title": "Validator B Status",
+            "title": "Ethchi Validator Status",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"validator-b\"}",
-                "legendFormat": "Validator B"
+                "expr": "up{job=\"ethchi-validator\"}",
+                "legendFormat": "Ethchi Validator"
               }
             ],
             "fieldConfig": {
@@ -107,7 +107,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(process_cpu_seconds_total{job=~\"pathfinder|validator-a|validator-b\"}[5m]) * 100",
+                "expr": "rate(process_cpu_seconds_total{job=~\"pathfinder|suffix-validator|ethchi-validator\"}[5m]) * 100",
                 "legendFormat": "{{job}} CPU %"
               }
             ],
@@ -122,7 +122,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "process_resident_memory_bytes{job=~\"pathfinder|validator-a|validator-b\"} / 1024 / 1024",
+                "expr": "process_resident_memory_bytes{job=~\"pathfinder|suffix-validator|ethchi-validator\"} / 1024 / 1024",
                 "legendFormat": "{{job}} Memory MB"
               }
             ],
@@ -137,7 +137,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "increase(attestation_submissions_total{validator=~\"validator-a|validator-b\"}[1h])",
+                "expr": "increase(attestation_submissions_total{validator=~\"suffix-validator|ethchi-validator\"}[1h])",
                 "legendFormat": "{{validator}} Attestations/hour"
               }
             ],

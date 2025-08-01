@@ -3,8 +3,8 @@ kind: Kustomization
 
 resources:
   - pathfinder-deployment.yaml
-  - validator-attestation-deployment.yaml
-  - validator-b-deployment.yaml
+  - suffix-validator-deployment.yaml
+  - ethchi-validator-deployment.yaml
   - prometheus-rbac.yaml
   - prometheus-config.yaml
   - grafana-admin-deployment.yaml

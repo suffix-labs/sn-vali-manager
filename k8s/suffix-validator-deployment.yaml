@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: validator-a
+  name: suffix-validator
   labels:
-    app: validator-a
-    validator: validator-a
+    app: suffix-validator
+    validator: suffix-validator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: validator-a
+      app: suffix-validator
   template:
     metadata:
       labels:
-        app: validator-a
-        validator: validator-a
+        app: suffix-validator
+        validator: suffix-validator
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
       containers:
-      - name: validator-attestation
-        image: ghcr.io/eqlabs/starknet-validator-attestation:latest
+      - name: suffix-validatorttestation
+        image: ghcr.io/eqlabs/starknet-suffix-validatorttestation:latest
         ports:
         - containerPort: 9090
           name: metrics
@@ -39,7 +39,7 @@ spec:
         - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:
         - secretRef:
-            name: validator-a-secrets
+            name: suffix-validator-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -51,13 +51,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: validator-a-service
+  name: suffix-validator-service
   labels:
-    app: validator-a
-    validator: validator-a
+    app: suffix-validator
+    validator: suffix-validator
 spec:
   selector:
-    app: validator-a
+    app: suffix-validator
   ports:
   - name: metrics
     port: 9090

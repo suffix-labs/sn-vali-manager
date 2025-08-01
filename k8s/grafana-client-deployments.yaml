@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: grafana-validator-a
+  name: grafana-suffix-validator
   labels:
-    app: grafana-validator-a
+    app: grafana-suffix-validator
     grafana-tier: client
-    validator: validator-a
+    validator: suffix-validator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: grafana-validator-a
+      app: grafana-suffix-validator
   template:
     metadata:
       labels:
-        app: grafana-validator-a
+        app: grafana-suffix-validator
         grafana-tier: client
-        validator: validator-a
+        validator: suffix-validator
     spec:
       containers:
       - name: grafana
@@ -25,7 +25,7 @@ spec:
         - containerPort: 3000
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "validator-a-pass123"
+          value: "suffix-validator-pass123"
         - name: GF_USERS_ALLOW_SIGN_UP
           value: "false"
         - name: GF_AUTH_ANONYMOUS_ENABLED
@@ -54,36 +54,36 @@ spec:
       volumes:
       - name: grafana-storage
         persistentVolumeClaim:
-          claimName: grafana-validator-a-pvc
+          claimName: grafana-suffix-validator-pvc
       - name: grafana-datasources
         configMap:
-          name: grafana-validator-a-datasources
+          name: grafana-suffix-validator-datasources
       - name: grafana-dashboards-config
         configMap:
           name: grafana-dashboards-config
       - name: grafana-validator-dashboards
         configMap:
-          name: grafana-validator-a-dashboards
+          name: grafana-suffix-validator-dashboards
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: grafana-validator-b
+  name: grafana-ethchi-validator
   labels:
-    app: grafana-validator-b
+    app: grafana-ethchi-validator
     grafana-tier: client
-    validator: validator-b
+    validator: ethchi-validator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: grafana-validator-b
+      app: grafana-ethchi-validator
   template:
     metadata:
       labels:
-        app: grafana-validator-b
+        app: grafana-ethchi-validator
         grafana-tier: client
-        validator: validator-b
+        validator: ethchi-validator
     spec:
       containers:
       - name: grafana
@@ -92,7 +92,7 @@ spec:
         - containerPort: 3000
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "validator-b-pass123"
+          value: "ethchi-validator-pass123"
         - name: GF_USERS_ALLOW_SIGN_UP
           value: "false"
         - name: GF_AUTH_ANONYMOUS_ENABLED
@@ -121,28 +121,28 @@ spec:
       volumes:
       - name: grafana-storage
         persistentVolumeClaim:
-          claimName: grafana-validator-b-pvc
+          claimName: grafana-ethchi-validator-pvc
       - name: grafana-datasources
         configMap:
-          name: grafana-validator-b-datasources
+          name: grafana-ethchi-validator-datasources
       - name: grafana-dashboards-config
         configMap:
           name: grafana-dashboards-config
       - name: grafana-validator-dashboards
         configMap:
-          name: grafana-validator-b-dashboards
+          name: grafana-ethchi-validator-dashboards
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: grafana-validator-a-service
+  name: grafana-suffix-validator-service
   labels:
-    app: grafana-validator-a
+    app: grafana-suffix-validator
     grafana-tier: client
-    validator: validator-a
+    validator: suffix-validator
 spec:
   selector:
-    app: grafana-validator-a
+    app: grafana-suffix-validator
   ports:
   - port: 3001
     targetPort: 3000
@@ -151,14 +151,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: grafana-validator-b-service
+  name: grafana-ethchi-validator-service
   labels:
-    app: grafana-validator-b
+    app: grafana-ethchi-validator
     grafana-tier: client
-    validator: validator-b
+    validator: ethchi-validator
 spec:
   selector:
-    app: grafana-validator-b
+    app: grafana-ethchi-validator
   ports:
   - port: 3002
     targetPort: 3000
@@ -167,7 +167,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: grafana-validator-a-pvc
+  name: grafana-suffix-validator-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -178,7 +178,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: grafana-validator-b-pvc
+  name: grafana-ethchi-validator-pvc
 spec:
   accessModes:
     - ReadWriteOnce

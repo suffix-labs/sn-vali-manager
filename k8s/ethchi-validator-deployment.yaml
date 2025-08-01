@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: validator-b
+  name: ethchi-validator
   labels:
-    app: validator-b
-    validator: validator-b
+    app: ethchi-validator
+    validator: ethchi-validator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: validator-b
+      app: ethchi-validator
   template:
     metadata:
       labels:
-        app: validator-b
-        validator: validator-b
+        app: ethchi-validator
+        validator: ethchi-validator
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9091"
@@ -39,7 +39,7 @@ spec:
         - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:
         - secretRef:
-            name: validator-b-secrets
+            name: ethchi-validator-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -51,13 +51,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: validator-b-service
+  name: ethchi-validator-service
   labels:
-    app: validator-b
-    validator: validator-b
+    app: ethchi-validator
+    validator: ethchi-validator
 spec:
   selector:
-    app: validator-b
+    app: ethchi-validator
   ports:
   - name: metrics
     port: 9091

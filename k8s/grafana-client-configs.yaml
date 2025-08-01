@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-validator-a-datasources
+  name: grafana-suffix-validator-datasources
 data:
   prometheus.yaml: |
     apiVersion: 1
@@ -15,7 +15,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-validator-b-datasources
+  name: grafana-ethchi-validator-datasources
 data:
   prometheus.yaml: |
     apiVersion: 1
@@ -29,14 +29,14 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-validator-a-dashboards
+  name: grafana-suffix-validator-dashboards
 data:
-  validator-a-dashboard.json: |
+  suffix-validator-dashboard.json: |
     {
       "dashboard": {
         "id": null,
-        "title": "Validator A Dashboard",
-        "tags": ["validator-a"],
+        "title": "Suffix Validator Dashboard",
+        "tags": ["suffix-validator"],
         "style": "dark",
         "timezone": "browser",
         "panels": [
@@ -71,7 +71,7 @@ data:
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"validator-a\"}",
+                "expr": "up{job=\"suffix-validator\"}",
                 "legendFormat": "Validator Status"
               }
             ],
@@ -96,7 +96,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(process_cpu_seconds_total{job=\"validator-a\"}[5m]) * 100",
+                "expr": "rate(process_cpu_seconds_total{job=\"suffix-validator\"}[5m]) * 100",
                 "legendFormat": "CPU %"
               }
             ],
@@ -111,7 +111,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "process_resident_memory_bytes{job=\"validator-a\"} / 1024 / 1024",
+                "expr": "process_resident_memory_bytes{job=\"suffix-validator\"} / 1024 / 1024",
                 "legendFormat": "Memory MB"
               }
             ],
@@ -126,7 +126,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "increase(attestation_submissions_total{validator=\"validator-a\"}[1h])",
+                "expr": "increase(attestation_submissions_total{validator=\"suffix-validator\"}[1h])",
                 "legendFormat": "Attestations per hour"
               }
             ],
@@ -156,14 +156,14 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-validator-b-dashboards
+  name: grafana-ethchi-validator-dashboards
 data:
-  validator-b-dashboard.json: |
+  ethchi-validator-dashboard.json: |
     {
       "dashboard": {
         "id": null,
-        "title": "Validator B Dashboard",
-        "tags": ["validator-b"],
+        "title": "Ethchi Validator Dashboard",
+        "tags": ["ethchi-validator"],
         "style": "dark",
         "timezone": "browser",
         "panels": [
@@ -198,7 +198,7 @@ data:
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"validator-b\"}",
+                "expr": "up{job=\"ethchi-validator\"}",
                 "legendFormat": "Validator Status"
               }
             ],
@@ -223,7 +223,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(process_cpu_seconds_total{job=\"validator-b\"}[5m]) * 100",
+                "expr": "rate(process_cpu_seconds_total{job=\"ethchi-validator\"}[5m]) * 100",
                 "legendFormat": "CPU %"
               }
             ],
@@ -238,7 +238,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "process_resident_memory_bytes{job=\"validator-b\"} / 1024 / 1024",
+                "expr": "process_resident_memory_bytes{job=\"ethchi-validator\"} / 1024 / 1024",
                 "legendFormat": "Memory MB"
               }
             ],
@@ -253,7 +253,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "increase(attestation_submissions_total{validator=\"validator-b\"}[1h])",
+                "expr": "increase(attestation_submissions_total{validator=\"ethchi-validator\"}[1h])",
                 "legendFormat": "Attestations per hour"
               }
             ],
