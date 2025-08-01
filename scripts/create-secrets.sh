@@ -41,10 +41,10 @@ echo -e "${BLUE}✅ Validating required environment variables...${NC}"
 
 required_vars=(
     "PATHFINDER_ETHEREUM_API_URL"
-    "VALIDATOR_A_STAKER_OPERATIONAL_ADDRESS"
-    "VALIDATOR_A_OPERATIONAL_PRIVATE_KEY"
-    "VALIDATOR_B_STAKER_OPERATIONAL_ADDRESS"
-    "VALIDATOR_B_OPERATIONAL_PRIVATE_KEY"
+    "SUFFIX_VALIDATOR_STAKER_OPERATIONAL_ADDRESS"
+    "SUFFIX_VALIDATOR_OPERATIONAL_PRIVATE_KEY"
+    "ETHCHI_VALIDATOR_STAKER_OPERATIONAL_ADDRESS"
+    "ETHCHI_VALIDATOR_OPERATIONAL_PRIVATE_KEY"
 )
 
 missing_vars=()
@@ -65,8 +65,8 @@ if [[ ${#missing_vars[@]} -gt 0 ]]; then
 fi
 
 # Validate private keys format (basic check)
-for validator in "A" "B"; do
-    var_name="VALIDATOR_${validator}_OPERATIONAL_PRIVATE_KEY"
+for validator in "SUFFIX_VALIDATOR" "ETHCHI_VALIDATOR"; do
+    var_name="${validator}_OPERATIONAL_PRIVATE_KEY"
     private_key="${!var_name}"
     
     # Remove 0x prefix if present for validation
@@ -99,8 +99,8 @@ echo -e "${GREEN}  ✓ pathfinder-secrets created${NC}"
 # Generate validator-a secret
 kubectl create secret generic suffix-validator-secrets \
     --namespace="$NAMESPACE" \
-    --from-literal=STAKER_OPERATIONAL_ADDRESS="$VALIDATOR_A_STAKER_OPERATIONAL_ADDRESS" \
-    --from-literal=VALIDATOR_ATTESTATION_OPERATIONAL_PRIVATE_KEY="$VALIDATOR_A_OPERATIONAL_PRIVATE_KEY" \
+    --from-literal=STAKER_OPERATIONAL_ADDRESS="$SUFFIX_VALIDATOR_STAKER_OPERATIONAL_ADDRESS" \
+    --from-literal=VALIDATOR_ATTESTATION_OPERATIONAL_PRIVATE_KEY="$SUFFIX_VALIDATOR_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
 
@@ -109,8 +109,8 @@ echo -e "${GREEN}  ✓ suffix-validator-secrets created${NC}"
 # Generate validator-b secret  
 kubectl create secret generic ethchi-validator-secrets \
     --namespace="$NAMESPACE" \
-    --from-literal=STAKER_OPERATIONAL_ADDRESS="$VALIDATOR_B_STAKER_OPERATIONAL_ADDRESS" \
-    --from-literal=VALIDATOR_ATTESTATION_OPERATIONAL_PRIVATE_KEY="$VALIDATOR_B_OPERATIONAL_PRIVATE_KEY" \
+    --from-literal=STAKER_OPERATIONAL_ADDRESS="$ETHCHI_VALIDATOR_STAKER_OPERATIONAL_ADDRESS" \
+    --from-literal=VALIDATOR_ATTESTATION_OPERATIONAL_PRIVATE_KEY="$ETHCHI_VALIDATOR_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
 

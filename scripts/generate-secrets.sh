@@ -22,10 +22,10 @@ export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
 # Validate required variables
 required_vars=(
     "PATHFINDER_ETHEREUM_API_URL"
-    "VALIDATOR_A_REMOTE_SIGNER_URL" 
-    "VALIDATOR_A_OPERATIONAL_PRIVATE_KEY"
-    "VALIDATOR_B_REMOTE_SIGNER_URL"
-    "VALIDATOR_B_OPERATIONAL_PRIVATE_KEY"
+    "SUFFIX_VALIDATOR_REMOTE_SIGNER_URL" 
+    "SUFFIX_VALIDATOR_OPERATIONAL_PRIVATE_KEY"
+    "ETHCHI_VALIDATOR_REMOTE_SIGNER_URL"
+    "ETHCHI_VALIDATOR_OPERATIONAL_PRIVATE_KEY"
 )
 
 missing_vars=()
@@ -57,16 +57,16 @@ kubectl create secret generic pathfinder-secrets \
 # Generate validator-a secret
 kubectl create secret generic suffix-validator-secrets \
     --namespace=starknet-node \
-    --from-literal=REMOTE_SIGNER_URL="$VALIDATOR_A_REMOTE_SIGNER_URL" \
-    --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_A_OPERATIONAL_PRIVATE_KEY" \
+    --from-literal=REMOTE_SIGNER_URL="$SUFFIX_VALIDATOR_REMOTE_SIGNER_URL" \
+    --from-literal=OPERATIONAL_PRIVATE_KEY="$SUFFIX_VALIDATOR_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
 
 # Generate validator-b secret  
 kubectl create secret generic ethchi-validator-secrets \
     --namespace=starknet-node \
-    --from-literal=REMOTE_SIGNER_URL="$VALIDATOR_B_REMOTE_SIGNER_URL" \
-    --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_B_OPERATIONAL_PRIVATE_KEY" \
+    --from-literal=REMOTE_SIGNER_URL="$ETHCHI_VALIDATOR_REMOTE_SIGNER_URL" \
+    --from-literal=OPERATIONAL_PRIVATE_KEY="$ETHCHI_VALIDATOR_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
 
