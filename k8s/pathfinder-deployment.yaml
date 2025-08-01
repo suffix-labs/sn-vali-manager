@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pathfinder
+  labels:
+    app: pathfinder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pathfinder
+  template:
+    metadata:
+      labels:
+        app: pathfinder
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9545"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: pathfinder
+        image: eqlabs/pathfinder:latest
+        ports:
+        - containerPort: 9545
+          name: http-rpc
+        - containerPort: 9546
+          name: metrics
+        env:
+        - name: PATHFINDER_HTTP_RPC_ADDRESS
+          value: "0.0.0.0:9545"
+        - name: STARKNET_RPC_URL
+          value: "http://pathfinder-service:9545"
+        envFrom:
+        - secretRef:
+            name: pathfinder-secrets
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: pathfinder-data
+          mountPath: /usr/share/pathfinder/data
+      volumes:
+      - name: pathfinder-data
+        persistentVolumeClaim:
+          claimName: pathfinder-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pathfinder-service
+  labels:
+    app: pathfinder
+spec:
+  selector:
+    app: pathfinder
+  ports:
+  - name: http-rpc
+    port: 9545
+    targetPort: 9545
+  - name: metrics
+    port: 9546
+    targetPort: 9546
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pathfinder-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

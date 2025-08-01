@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: validator-a
+  labels:
+    app: validator-a
+    validator: validator-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: validator-a
+  template:
+    metadata:
+      labels:
+        app: validator-a
+        validator: validator-a
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: validator-attestation
+        image: ghcr.io/eqlabs/starknet-validator-attestation:latest
+        ports:
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: RUST_LOG
+          value: "info"
+        - name: STARKNET_RPC_URL
+          value: "http://pathfinder-service:9545"
+        args:
+        - "--metrics-address"
+        - "0.0.0.0:9090"
+        - "--remote-signer-url"
+        - "$(REMOTE_SIGNER_URL)"
+        - "--node-url"
+        - "$(STARKNET_RPC_URL)"
+        envFrom:
+        - secretRef:
+            name: validator-a-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: validator-a-service
+  labels:
+    app: validator-a
+    validator: validator-a
+spec:
+  selector:
+    app: validator-a
+  ports:
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  type: ClusterIP
+# Secret is now managed by External Secrets Operator
+# See external-secrets.yaml for configuration

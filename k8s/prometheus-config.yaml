@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    rule_files:
+      # - "first_rules.yml"
+      # - "second_rules.yml"
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'pathfinder'
+        static_configs:
+          - targets: ['pathfinder-service:9546']
+        scrape_interval: 30s
+        metrics_path: '/metrics'
+
+      - job_name: 'validator-a'
+        static_configs:
+          - targets: ['validator-a-service:9090']
+        scrape_interval: 30s
+        metrics_path: '/metrics'
+        relabel_configs:
+          - target_label: validator
+            replacement: validator-a
+
+      - job_name: 'validator-b'
+        static_configs:
+          - targets: ['validator-b-service:9091']
+        scrape_interval: 30s
+        metrics_path: '/metrics'
+        relabel_configs:
+          - target_label: validator
+            replacement: validator-b
+
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus/'
+          - '--web.console.libraries=/etc/prometheus/console_libraries'
+          - '--web.console.templates=/etc/prometheus/consoles'
+          - '--storage.tsdb.retention.time=200h'
+          - '--web.enable-lifecycle'
+        volumeMounts:
+        - name: prometheus-config-volume
+          mountPath: /etc/prometheus/
+        - name: prometheus-storage-volume
+          mountPath: /prometheus/
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: prometheus-config-volume
+        configMap:
+          defaultMode: 420
+          name: prometheus-config
+      - name: prometheus-storage-volume
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  labels:
+    app: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

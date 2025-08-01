@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-validator-a
+  labels:
+    app: grafana-validator-a
+    grafana-tier: client
+    validator: validator-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-validator-a
+  template:
+    metadata:
+      labels:
+        app: grafana-validator-a
+        grafana-tier: client
+        validator: validator-a
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "validator-a-pass123"
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: "Viewer"
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-datasources
+          mountPath: /etc/grafana/provisioning/datasources
+          readOnly: true
+        - name: grafana-dashboards-config
+          mountPath: /etc/grafana/provisioning/dashboards
+          readOnly: true
+        - name: grafana-validator-dashboards
+          mountPath: /var/lib/grafana/dashboards
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-validator-a-pvc
+      - name: grafana-datasources
+        configMap:
+          name: grafana-validator-a-datasources
+      - name: grafana-dashboards-config
+        configMap:
+          name: grafana-dashboards-config
+      - name: grafana-validator-dashboards
+        configMap:
+          name: grafana-validator-a-dashboards
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-validator-b
+  labels:
+    app: grafana-validator-b
+    grafana-tier: client
+    validator: validator-b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-validator-b
+  template:
+    metadata:
+      labels:
+        app: grafana-validator-b
+        grafana-tier: client
+        validator: validator-b
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "validator-b-pass123"
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: "Viewer"
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-datasources
+          mountPath: /etc/grafana/provisioning/datasources
+          readOnly: true
+        - name: grafana-dashboards-config
+          mountPath: /etc/grafana/provisioning/dashboards
+          readOnly: true
+        - name: grafana-validator-dashboards
+          mountPath: /var/lib/grafana/dashboards
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-validator-b-pvc
+      - name: grafana-datasources
+        configMap:
+          name: grafana-validator-b-datasources
+      - name: grafana-dashboards-config
+        configMap:
+          name: grafana-dashboards-config
+      - name: grafana-validator-dashboards
+        configMap:
+          name: grafana-validator-b-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-validator-a-service
+  labels:
+    app: grafana-validator-a
+    grafana-tier: client
+    validator: validator-a
+spec:
+  selector:
+    app: grafana-validator-a
+  ports:
+  - port: 3001
+    targetPort: 3000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-validator-b-service
+  labels:
+    app: grafana-validator-b
+    grafana-tier: client
+    validator: validator-b
+spec:
+  selector:
+    app: grafana-validator-b
+  ports:
+  - port: 3002
+    targetPort: 3000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-validator-a-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-validator-b-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

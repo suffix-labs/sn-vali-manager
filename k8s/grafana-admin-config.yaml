@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-admin-datasources
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-service:9090
+      isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-admin-dashboards
+data:
+  admin-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "StarkNet Admin Dashboard",
+        "tags": ["starknet", "admin"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Pathfinder Node Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"pathfinder\"}",
+                "legendFormat": "Pathfinder Status"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Validator A Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"validator-a\"}",
+                "legendFormat": "Validator A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Validator B Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"validator-b\"}",
+                "legendFormat": "Validator B"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}
+          },
+          {
+            "id": 4,
+            "title": "CPU Usage by Service",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(process_cpu_seconds_total{job=~\"pathfinder|validator-a|validator-b\"}[5m]) * 100",
+                "legendFormat": "{{job}} CPU %"
+              }
+            ],
+            "yAxes": [
+              {"unit": "percent", "min": 0, "max": 100}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 5,
+            "title": "Memory Usage by Service",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "process_resident_memory_bytes{job=~\"pathfinder|validator-a|validator-b\"} / 1024 / 1024",
+                "legendFormat": "{{job}} Memory MB"
+              }
+            ],
+            "yAxes": [
+              {"unit": "bytes", "min": 0}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          },
+          {
+            "id": 6,
+            "title": "Validator Attestations Count",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "increase(attestation_submissions_total{validator=~\"validator-a|validator-b\"}[1h])",
+                "legendFormat": "{{validator}} Attestations/hour"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+          },
+          {
+            "id": 7,
+            "title": "Network Block Height",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "network_block_number{job=\"pathfinder\"}",
+                "legendFormat": "Current Block"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "5s"
+      }
+    }

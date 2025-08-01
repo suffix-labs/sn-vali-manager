@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-service:9090
+      isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+data:
+  dashboard.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+data:
+  starknet-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "StarkNet Node Monitoring",
+        "tags": ["starknet"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Pathfinder Node Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"pathfinder\"}",
+                "legendFormat": "Node Status"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Validator Attestation Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"starknet-validator-attestation\"}",
+                "legendFormat": "Attestation Status"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+                "legendFormat": "{{job}} CPU %"
+              }
+            ],
+            "yAxes": [
+              {"unit": "percent", "min": 0, "max": 100}
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "process_resident_memory_bytes / 1024 / 1024",
+                "legendFormat": "{{job}} Memory MB"
+              }
+            ],
+            "yAxes": [
+              {"unit": "bytes", "min": 0}
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "5s"
+      }
+    }
