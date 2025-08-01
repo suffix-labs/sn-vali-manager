@@ -29,8 +29,6 @@ spec:
         env:
         - name: PATHFINDER_HTTP_RPC_ADDRESS
           value: "0.0.0.0:9545"
-        - name: STARKNET_RPC_URL
-          value: "http://pathfinder-service:9545"
         envFrom:
         - secretRef:
             name: pathfinder-secrets

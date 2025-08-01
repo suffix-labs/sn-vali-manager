@@ -1,0 +1,29 @@
+# Environment files - NEVER commit these!
+.env
+.env.local
+.env.*.local
+
+# Kubernetes temporary files
+*.tmp.yaml
+
+# Backup files
+.env.backup*
+*.bak
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary secrets (if any scripts create them)
+secrets/
+temp-secrets/
+
+# Log files
+*.log
+logs/

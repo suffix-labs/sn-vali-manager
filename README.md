@@ -21,45 +21,73 @@ This repository contains Kubernetes manifests for deploying a complete StarkNet 
 
 ## Configuration
 
-Before deploying, update these configuration files:
+Configure your secrets using environment variables (recommended approach):
 
-### 1. Pathfinder Configuration
-Edit `k8s/pathfinder-deployment.yaml`:
-```yaml
-- name: PATHFINDER_ETHEREUM_API_URL
-  value: "https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
+### 1. Create Environment File
+```bash
+# Copy the template and edit with your actual values
+cp .env.example .env
+
+# Edit .env with your API keys and private keys
+# NEVER commit .env files to version control!
 ```
 
-### 2. Validator A Secrets
-Edit `k8s/validator-attestation-deployment.yaml`:
-```yaml
-stringData:
-  REMOTE_SIGNER_URL: "https://validator-a-signer-url"
-  OPERATIONAL_PRIVATE_KEY: "validator-a-private-key-here"
+### 2. Required Environment Variables
+Edit `.env` file with your actual values:
+
+```bash
+# Pathfinder Node - Ethereum API access
+PATHFINDER_ETHEREUM_API_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_ACTUAL_API_KEY
+
+# Validator A - Company 1
+VALIDATOR_A_REMOTE_SIGNER_URL=https://validator-a-signer-url.com
+VALIDATOR_A_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
+
+# Validator B - Company 2  
+VALIDATOR_B_REMOTE_SIGNER_URL=https://validator-b-signer-url.com
+VALIDATOR_B_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
+
+# Optional logging configuration
+RUST_LOG=info
 ```
 
-### 3. Validator B Secrets
-Edit `k8s/validator-b-deployment.yaml`:
-```yaml
-stringData:
-  REMOTE_SIGNER_URL: "https://validator-b-signer-url"
-  OPERATIONAL_PRIVATE_KEY: "validator-b-private-key-here"
-```
+### 3. Security Notes
+- ✅ Secrets are stored in Kubernetes secrets (not YAML files)
+- ✅ `.env` file is gitignored (never committed)
+- ✅ Script validates all required variables before deployment
+- ⚠️ Keep your `.env` file secure and backed up safely
 
 ## Deployment
 
-### Quick Deploy
+### Quick Deploy (Recommended)
 ```bash
+# 1. Configure your secrets
+cp .env.example .env
+# Edit .env with your actual API keys and private keys
+
+# 2. Deploy everything
 ./deploy.sh
 ```
 
-### Manual Deploy
+### Manual Steps (If Needed)
 ```bash
-# Create namespace
-kubectl create namespace starknet-node
+# Create secrets from .env file
+./scripts/create-secrets.sh
 
-# Deploy all components
-kubectl apply -k k8s/
+# Deploy applications (skip secret creation)
+./deploy.sh --skip-secrets
+```
+
+### Deployment Options
+```bash
+# Deploy with secret creation (default)
+./deploy.sh
+
+# Deploy without recreating secrets (for updates)
+./deploy.sh --skip-secrets
+
+# Show help
+./deploy.sh --help
 ```
 
 ## Access Services
@@ -192,12 +220,26 @@ kubectl logs -n starknet-node deployment/validator-a
 kubectl logs -n starknet-node deployment/validator-b
 ```
 
-## Security Notes
+## Security Best Practices
 
-- Store secrets in Kubernetes secrets, not plaintext
+### Secret Management
+- ✅ **Never commit `.env` files** to version control (enforced by .gitignore)
+- ✅ **Rotate secrets regularly** - Update .env and re-run `./scripts/create-secrets.sh`
+- ✅ **Backup .env securely** - Store encrypted backups of your .env file
+- ✅ **Limit access** - Only authorized personnel should have access to .env files
+- ✅ **Monitor usage** - Watch for unauthorized access to your validator accounts
+
+### Kubernetes Security
 - Use RBAC for service account permissions
 - Consider network policies for pod-to-pod communication
-- Regular backup of private keys and persistent data
+- Regular backup of persistent data
+- Monitor resource usage and pod health
+
+### Operational Security
+- Keep Kubernetes cluster updated
+- Monitor validator performance and attestation success rates
+- Set up alerts for validator downtime or errors
+- Regularly audit who has access to the cluster and secrets
 
 ## Updates
 
