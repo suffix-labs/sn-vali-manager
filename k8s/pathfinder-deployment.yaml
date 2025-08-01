@@ -32,11 +32,15 @@ spec:
         - name: RPC_ROOT_VERSION
           value: "v08"
         args:
+        - "--ethereum.url"
+        - "$(PATHFINDER_ETHEREUM_API_URL)"
+        - "--data-directory"
+        - "/usr/share/pathfinder/data"
         - "--http-rpc"
         - "0.0.0.0:9545"
         - "--rpc.cors-domains"
         - "*"
-        - "--rpc.websocket"
+        - "--rpc.websocket.enabled"
         envFrom:
         - secretRef:
             name: pathfinder-secrets
