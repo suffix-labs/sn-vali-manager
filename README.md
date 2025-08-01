@@ -5,7 +5,7 @@ This repository contains Kubernetes manifests for deploying a complete StarkNet 
 ## Architecture
 
 - **Single Pathfinder Node**: Shared StarkNet full node providing RPC access
-- **Dual Validator Attestation**: Two separate validator attestation services
+- **Dual Validator Attestation**: Two separate validator attestation services with local signing
 - **Multi-Tier Monitoring**: 
   - Admin dashboard (full access to all metrics)
   - Client dashboards (per-validator isolated monitoring)
@@ -39,12 +39,10 @@ Edit `.env` file with your actual values:
 # Pathfinder Node - Ethereum API access
 PATHFINDER_ETHEREUM_API_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_ACTUAL_API_KEY
 
-# Validator A - Company 1
-VALIDATOR_A_REMOTE_SIGNER_URL=https://validator-a-signer-url.com
+# Validator A - Company 1 (Local Signing)
 VALIDATOR_A_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
 
-# Validator B - Company 2  
-VALIDATOR_B_REMOTE_SIGNER_URL=https://validator-b-signer-url.com
+# Validator B - Company 2 (Local Signing)
 VALIDATOR_B_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
 
 # Optional logging configuration
@@ -52,10 +50,12 @@ RUST_LOG=info
 ```
 
 ### 3. Security Notes
-- ✅ Secrets are stored in Kubernetes secrets (not YAML files)
-- ✅ `.env` file is gitignored (never committed)
-- ✅ Script validates all required variables before deployment
-- ⚠️ Keep your `.env` file secure and backed up safely
+- ✅ **Local signing**: Private keys stored securely in Kubernetes secrets  
+- ✅ **No remote dependencies**: Validators sign transactions locally
+- ✅ **Secrets isolation**: Each validator has separate private key storage
+- ✅ **Environment protection**: `.env` file is gitignored (never committed)
+- ✅ **Validation**: Script validates all required variables before deployment
+- ⚠️ **Key security**: Keep your `.env` file and private keys secure and backed up
 
 ## Deployment
 

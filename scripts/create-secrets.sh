@@ -41,9 +41,7 @@ echo -e "${BLUE}✅ Validating required environment variables...${NC}"
 
 required_vars=(
     "PATHFINDER_ETHEREUM_API_URL"
-    "VALIDATOR_A_REMOTE_SIGNER_URL" 
     "VALIDATOR_A_OPERATIONAL_PRIVATE_KEY"
-    "VALIDATOR_B_REMOTE_SIGNER_URL"
     "VALIDATOR_B_OPERATIONAL_PRIVATE_KEY"
 )
 
@@ -99,7 +97,6 @@ echo -e "${GREEN}  ✓ pathfinder-secrets created${NC}"
 # Generate validator-a secret
 kubectl create secret generic validator-a-secrets \
     --namespace="$NAMESPACE" \
-    --from-literal=REMOTE_SIGNER_URL="$VALIDATOR_A_REMOTE_SIGNER_URL" \
     --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_A_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
@@ -109,7 +106,6 @@ echo -e "${GREEN}  ✓ validator-a-secrets created${NC}"
 # Generate validator-b secret  
 kubectl create secret generic validator-b-secrets \
     --namespace="$NAMESPACE" \
-    --from-literal=REMOTE_SIGNER_URL="$VALIDATOR_B_REMOTE_SIGNER_URL" \
     --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_B_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
@@ -121,8 +117,8 @@ echo -e "${GREEN}🎉 Successfully created all Kubernetes secrets!${NC}"
 echo ""
 echo -e "${BLUE}📋 Created secrets in namespace '$NAMESPACE':${NC}"
 echo "  • pathfinder-secrets (Ethereum API access)"
-echo "  • validator-a-secrets (Validator A signer & private key)"  
-echo "  • validator-b-secrets (Validator B signer & private key)"
+echo "  • validator-a-secrets (Validator A private key for local signing)"  
+echo "  • validator-b-secrets (Validator B private key for local signing)"
 echo ""
 echo -e "${BLUE}🔍 You can verify the secrets were created with:${NC}"
 echo -e "${YELLOW}  kubectl get secrets -n $NAMESPACE${NC}"

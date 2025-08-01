@@ -34,8 +34,7 @@ spec:
         args:
         - "--metrics-address"
         - "0.0.0.0:9090"
-        - "--remote-signer-url"
-        - "$(REMOTE_SIGNER_URL)"
+        - "--local-signer"
         - "--node-url"
         - "$(STARKNET_RPC_URL)"
         envFrom:
