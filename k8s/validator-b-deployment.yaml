@@ -29,16 +29,12 @@ spec:
         env:
         - name: RUST_LOG
           value: "info"
-        - name: STARKNET_RPC_URL
-          value: "http://pathfinder-service:9545"
-        - name: STARKNET_WS_URL
-          value: "ws://pathfinder-service:9547"
         args:
         - "--metrics-address"
         - "0.0.0.0:9091"
         - "--local-signer"
         - "--node-url"
-        - "$(STARKNET_WS_URL)"
+        - "http://pathfinder-service:9545/rpc/v0_8"
         - "--staker-operational-address"
         - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:
