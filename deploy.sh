@@ -56,7 +56,7 @@ if [[ "$SKIP_SECRETS" == "false" ]]; then
         exit 1
     fi
     
-    ./scripts/create-secrets.sh
+    bash ./scripts/create-secrets.sh
     echo ""
 else
     echo -e "${YELLOW}⏭️  Skipping secret creation (using existing secrets)${NC}"
