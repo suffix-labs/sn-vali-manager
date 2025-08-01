@@ -31,12 +31,14 @@ spec:
           value: "info"
         - name: STARKNET_RPC_URL
           value: "http://pathfinder-service:9545"
+        - name: STARKNET_WS_URL
+          value: "ws://pathfinder-service:9547"
         args:
         - "--metrics-address"
         - "0.0.0.0:9091"
         - "--local-signer"
         - "--node-url"
-        - "$(STARKNET_RPC_URL)"
+        - "$(STARKNET_WS_URL)"
         - "--staker-operational-address"
         - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:

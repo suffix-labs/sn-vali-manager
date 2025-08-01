@@ -26,11 +26,13 @@ spec:
           name: http-rpc
         - containerPort: 9546
           name: metrics
+        - containerPort: 9547
+          name: websocket
         env:
         - name: PATHFINDER_HTTP_RPC_ADDRESS
           value: "0.0.0.0:9545"
         - name: PATHFINDER_RPC_WEBSOCKET_ADDRESS
-          value: "0.0.0.0:9545"
+          value: "0.0.0.0:9547"
         envFrom:
         - secretRef:
             name: pathfinder-secrets
@@ -66,5 +68,8 @@ spec:
   - name: metrics
     port: 9546
     targetPort: 9546
+  - name: websocket
+    port: 9547
+    targetPort: 9547
   type: ClusterIP
 # PersistentVolumeClaim removed - using hostPath to existing data directory

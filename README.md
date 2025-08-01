@@ -36,8 +36,8 @@ cp .env.example .env
 Edit `.env` file with your actual values:
 
 ```bash
-# Pathfinder Node - Ethereum API access
-PATHFINDER_ETHEREUM_API_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_ACTUAL_API_KEY
+# Pathfinder Node - Ethereum WebSocket access
+PATHFINDER_ETHEREUM_API_URL=wss://eth-mainnet.g.alchemy.com/v2/YOUR_ACTUAL_API_KEY
 
 # Validator A - Company 1 (Local Signing)
 VALIDATOR_A_OPERATIONAL_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY
