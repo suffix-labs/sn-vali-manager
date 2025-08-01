@@ -29,6 +29,8 @@ spec:
         env:
         - name: PATHFINDER_HTTP_RPC_ADDRESS
           value: "0.0.0.0:9545"
+        - name: PATHFINDER_RPC_WEBSOCKET_ADDRESS
+          value: "0.0.0.0:9545"
         envFrom:
         - secretRef:
             name: pathfinder-secrets
