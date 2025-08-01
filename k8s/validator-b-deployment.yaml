@@ -37,6 +37,8 @@ spec:
         - "--local-signer"
         - "--node-url"
         - "$(STARKNET_RPC_URL)"
+        - "--staker-operational-address"
+        - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:
         - secretRef:
             name: validator-b-secrets

@@ -41,7 +41,9 @@ echo -e "${BLUE}✅ Validating required environment variables...${NC}"
 
 required_vars=(
     "PATHFINDER_ETHEREUM_API_URL"
+    "VALIDATOR_A_STAKER_OPERATIONAL_ADDRESS"
     "VALIDATOR_A_OPERATIONAL_PRIVATE_KEY"
+    "VALIDATOR_B_STAKER_OPERATIONAL_ADDRESS"
     "VALIDATOR_B_OPERATIONAL_PRIVATE_KEY"
 )
 
@@ -97,6 +99,7 @@ echo -e "${GREEN}  ✓ pathfinder-secrets created${NC}"
 # Generate validator-a secret
 kubectl create secret generic validator-a-secrets \
     --namespace="$NAMESPACE" \
+    --from-literal=STAKER_OPERATIONAL_ADDRESS="$VALIDATOR_A_STAKER_OPERATIONAL_ADDRESS" \
     --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_A_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
@@ -106,6 +109,7 @@ echo -e "${GREEN}  ✓ validator-a-secrets created${NC}"
 # Generate validator-b secret  
 kubectl create secret generic validator-b-secrets \
     --namespace="$NAMESPACE" \
+    --from-literal=STAKER_OPERATIONAL_ADDRESS="$VALIDATOR_B_STAKER_OPERATIONAL_ADDRESS" \
     --from-literal=OPERATIONAL_PRIVATE_KEY="$VALIDATOR_B_OPERATIONAL_PRIVATE_KEY" \
     --from-literal=RUST_LOG="${RUST_LOG:-info}" \
     --dry-run=client -o yaml | kubectl apply -f -
