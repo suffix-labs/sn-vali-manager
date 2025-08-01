@@ -34,7 +34,7 @@ spec:
         - "0.0.0.0:9091"
         - "--local-signer"
         - "--node-url"
-        - "http://pathfinder-service:9545/rpc/v0_8"
+        - "http://pathfinder-service:9545/rpc/v08"
         - "--staker-operational-address"
         - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:

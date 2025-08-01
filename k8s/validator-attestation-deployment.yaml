@@ -34,7 +34,7 @@ spec:
         - "0.0.0.0:9090"
         - "--local-signer"
         - "--node-url"
-        - "http://pathfinder-service:9545/rpc/v0_8"
+        - "http://pathfinder-service:9545/rpc/v08"
         - "--staker-operational-address"
         - "$(STAKER_OPERATIONAL_ADDRESS)"
         envFrom:
@@ -63,5 +63,3 @@ spec:
     port: 9090
     targetPort: 9090
   type: ClusterIP
-# Secret is now managed by External Secrets Operator
-# See external-secrets.yaml for configuration

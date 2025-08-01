@@ -32,7 +32,7 @@ spec:
         - name: PATHFINDER_HTTP_RPC_CORS_DOMAINS
           value: "*"
         - name: PATHFINDER_RPC_ROOT_VERSION
-          value: "v0_8"
+          value: "v08"
         envFrom:
         - secretRef:
             name: pathfinder-secrets
