@@ -27,12 +27,16 @@ spec:
         - containerPort: 9546
           name: metrics
         env:
-        - name: PATHFINDER_HTTP_RPC_ADDRESS
-          value: "0.0.0.0:9545"
-        - name: PATHFINDER_HTTP_RPC_CORS_DOMAINS
-          value: "*"
-        - name: PATHFINDER_RPC_ROOT_VERSION
+        - name: RUST_LOG
+          value: "info"
+        - name: RPC_ROOT_VERSION
           value: "v08"
+        args:
+        - "--http-rpc"
+        - "0.0.0.0:9545"
+        - "--rpc-cors-domains"
+        - "*"
+        - "--rpc-websocket"
         envFrom:
         - secretRef:
             name: pathfinder-secrets
@@ -69,4 +73,3 @@ spec:
     port: 9546
     targetPort: 9546
   type: ClusterIP
-# PersistentVolumeClaim removed - using hostPath to existing data directory
