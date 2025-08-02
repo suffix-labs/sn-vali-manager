@@ -19,9 +19,8 @@ metadata:
 data:
   admin-dashboard.json: |
     {
-      "dashboard": {
-        "id": null,
-        "title": "StarkNet Admin Dashboard",
+      "id": null,
+      "title": "StarkNet Admin Dashboard",
         "tags": ["starknet", "admin"],
         "style": "dark",
         "timezone": "browser",
@@ -161,5 +160,4 @@ data:
           "to": "now"
         },
         "refresh": "5s"
-      }
     }
