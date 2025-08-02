@@ -11,5 +11,8 @@ resources:
   - grafana-admin-config.yaml
   - grafana-client-deployments.yaml
   - grafana-client-configs.yaml
+  - pathfinder-sealedsecret.yaml
+  - suffix-validator-sealedsecret.yaml
+  - ethchi-validator-sealedsecret.yaml
 
 namespace: starknet-node
