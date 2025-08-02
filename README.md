@@ -16,8 +16,8 @@ This repository contains Kubernetes manifests for deploying a complete StarkNet 
 
 - Kubernetes cluster (v1.20+)
 - kubectl configured
-- At least 8GB RAM and 4 CPU cores available
-- 150GB+ storage for persistent volumes
+- At least 16GB RAM and 8 CPU cores available
+- 300GB+ storage for persistent volumes
 
 ## Configuration
 
