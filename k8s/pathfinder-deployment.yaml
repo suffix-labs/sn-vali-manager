@@ -18,6 +18,10 @@ spec:
         prometheus.io/port: "9545"
         prometheus.io/path: "/metrics"
     spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
       - name: pathfinder
         image: eqlabs/pathfinder:latest
@@ -46,11 +50,11 @@ spec:
             name: pathfinder-secrets
         resources:
           requests:
-            memory: "8Gi"
-            cpu: "4000m"
+            memory: "6Gi"
+            cpu: "2000m"
           limits:
-            memory: "12Gi"
-            cpu: "6000m"
+            memory: "10Gi"
+            cpu: "4000m"
         volumeMounts:
         - name: pathfinder-data
           mountPath: /usr/share/pathfinder/data

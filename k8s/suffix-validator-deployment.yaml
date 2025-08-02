@@ -21,7 +21,7 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       containers:
-      - name: suffix-validatorttestation
+      - name: suffix-validator-attestation
         image: ghcr.io/eqlabs/starknet-validator-attestation:latest
         ports:
         - containerPort: 9090
