@@ -33,9 +33,8 @@ metadata:
 data:
   suffix-validator-dashboard.json: |
     {
-      "dashboard": {
-        "id": null,
-        "title": "Suffix Validator Dashboard",
+      "id": null,
+      "title": "Suffix Validator Dashboard",
         "tags": ["suffix-validator"],
         "style": "dark",
         "timezone": "browser",
@@ -150,7 +149,6 @@ data:
           "to": "now"
         },
         "refresh": "10s"
-      }
     }
 ---
 apiVersion: v1
@@ -160,9 +158,8 @@ metadata:
 data:
   ethchi-validator-dashboard.json: |
     {
-      "dashboard": {
-        "id": null,
-        "title": "Ethchi Validator Dashboard",
+      "id": null,
+      "title": "Ethchi Validator Dashboard",
         "tags": ["ethchi-validator"],
         "style": "dark",
         "timezone": "browser",
@@ -277,5 +274,4 @@ data:
           "to": "now"
         },
         "refresh": "10s"
-      }
     }
