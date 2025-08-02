@@ -46,19 +46,18 @@ spec:
             name: pathfinder-secrets
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "500m"
+            memory: "8Gi"
+            cpu: "4000m"
           limits:
-            memory: "4Gi"
-            cpu: "2000m"
+            memory: "12Gi"
+            cpu: "6000m"
         volumeMounts:
         - name: pathfinder-data
           mountPath: /usr/share/pathfinder/data
       volumes:
       - name: pathfinder-data
-        hostPath:
-          path: /home/trbiv/pathfinder/data
-          type: Directory
+        persistentVolumeClaim:
+          claimName: pathfinder-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -77,3 +76,17 @@ spec:
     port: 9546
     targetPort: 9546
   type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pathfinder-pvc
+  labels:
+    app: pathfinder
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: do-block-storage
+  resources:
+    requests:
+      storage: 300Gi
