@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: suffix-validatorttestation
-        image: ghcr.io/eqlabs/starknet-suffix-validatorttestation:latest
+        image: ghcr.io/eqlabs/starknet-validator-attestation:latest
         ports:
         - containerPort: 9090
           name: metrics
