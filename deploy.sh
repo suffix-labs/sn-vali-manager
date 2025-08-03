@@ -71,6 +71,10 @@ kubectl create namespace starknet-node --dry-run=client -o yaml | kubectl apply 
 echo -e "${BLUE}📦 Deploying Kubernetes resources...${NC}"
 kubectl apply -k k8s/
 
+# Create Grafana dashboard ConfigMaps
+echo -e "${BLUE}📊 Creating Grafana dashboard ConfigMaps...${NC}"
+echo "Dashboard ConfigMaps created automatically via kustomization.yaml"
+
 echo "Deployment complete. Services will be available at:"
 echo ""
 echo "Admin Access (Full monitoring):"
