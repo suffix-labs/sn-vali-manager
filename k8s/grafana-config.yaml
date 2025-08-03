@@ -70,12 +70,12 @@ data:
           },
           {
             "id": 2,
-            "title": "Validator Attestation Status",
+            "title": "Ethchi Validator Status",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"starknet-validator-attestation\"}",
-                "legendFormat": "Attestation Status"
+                "expr": "up{job=\"ethchi-validator\"}",
+                "legendFormat": "Ethchi Validator Status"
               }
             ],
             "fieldConfig": {
@@ -99,7 +99,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+                "expr": "rate(process_cpu_seconds_total{job=~\"pathfinder|ethchi-validator\"}[5m]) * 100",
                 "legendFormat": "{{job}} CPU %"
               }
             ],
@@ -114,7 +114,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "process_resident_memory_bytes / 1024 / 1024",
+                "expr": "process_resident_memory_bytes{job=~\"pathfinder|ethchi-validator\"} / 1024 / 1024",
                 "legendFormat": "{{job}} Memory MB"
               }
             ],
