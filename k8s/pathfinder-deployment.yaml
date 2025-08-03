@@ -45,7 +45,7 @@ spec:
         - "--rpc.cors-domains"
         - "*"
         - "--rpc.websocket.enabled"
-        - "--metrics-address"
+        - "--monitor-address"
         - "0.0.0.0:9546"
         envFrom:
         - secretRef:
