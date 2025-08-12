@@ -45,44 +45,169 @@ data:
         "panels": [
           {
             "id": 1,
-            "title": "Pathfinder Node Status",
+            "title": "Current Block Height",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"pathfinder\"}",
-                "legendFormat": "Node Status"
+                "expr": "current_block{job=\"pathfinder\"}",
+                "legendFormat": "Block Height"
               }
             ],
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "steps": [
-                    {"color": "red", "value": 0},
-                    {"color": "green", "value": 1}
-                  ]
-                }
+                "color": {"mode": "palette-classic"},
+                "unit": "short",
+                "decimals": 0
               }
             },
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+            "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}
           },
           {
             "id": 2,
-            "title": "Validator Attestation Status",
+            "title": "Highest Block",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"starknet-validator-attestation\"}",
-                "legendFormat": "Attestation Status"
+                "expr": "highest_block{job=\"pathfinder\"}",
+                "legendFormat": "Highest Block"
               }
             ],
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
+                "color": {"mode": "palette-classic"},
+                "unit": "short",
+                "decimals": 0
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Block Processing Time",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "block_processing{job=\"pathfinder\"}",
+                "legendFormat": "Processing Time (s)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 5},
+                    {"color": "red", "value": 15}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0}
+          },
+          {
+            "id": 4,
+            "title": "Block Download Time",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "block_download{job=\"pathfinder\"}",
+                "legendFormat": "Download Time (s)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 10},
+                    {"color": "red", "value": 30}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+          },
+          {
+            "id": 5,
+            "title": "Block Height Over Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "current_block{job=\"pathfinder\"}",
+                "legendFormat": "Current Block"
+              },
+              {
+                "expr": "highest_block{job=\"pathfinder\"}",
+                "legendFormat": "Highest Block"
+              }
+            ],
+            "yAxes": [{"unit": "short"}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+          },
+          {
+            "id": 6,
+            "title": "Block Processing Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "block_processing{job=\"pathfinder\"}",
+                "legendFormat": "Processing Time"
+              },
+              {
+                "expr": "block_download{job=\"pathfinder\"}",
+                "legendFormat": "Download Time"
+              }
+            ],
+            "yAxes": [{"unit": "s"}],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+          },
+          {
+            "id": 7,
+            "title": "Gateway Requests",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(gateway_requests_total{job=\"pathfinder\"}[5m])",
+                "legendFormat": "{{method}} - {{tag}}"
+              }
+            ],
+            "yAxes": [{"unit": "reqps"}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14}
+          },
+          {
+            "id": 8,
+            "title": "RPC Method Calls",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(rpc_method_calls_total{job=\"pathfinder\"}[5m])",
+                "legendFormat": "{{method}} ({{version}})"
+              }
+            ],
+            "yAxes": [{"unit": "reqps"}],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14}
+          },
+          {
+            "id": 9,
+            "title": "Validator Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"suffix-validator\"}",
+                "legendFormat": "Suffix Validator"
+              },
+              {
+                "expr": "up{job=\"ethchi-validator\"}",
+                "legendFormat": "Ethchi Validator"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
                 "thresholds": {
                   "steps": [
                     {"color": "red", "value": 0},
@@ -91,37 +216,7 @@ data:
                 }
               }
             },
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
-          },
-          {
-            "id": 3,
-            "title": "CPU Usage",
-            "type": "graph",
-            "targets": [
-              {
-                "expr": "rate(process_cpu_seconds_total[5m]) * 100",
-                "legendFormat": "{{job}} CPU %"
-              }
-            ],
-            "yAxes": [
-              {"unit": "percent", "min": 0, "max": 100}
-            ],
-            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
-          },
-          {
-            "id": 4,
-            "title": "Memory Usage",
-            "type": "graph",
-            "targets": [
-              {
-                "expr": "process_resident_memory_bytes / 1024 / 1024",
-                "legendFormat": "{{job}} Memory MB"
-              }
-            ],
-            "yAxes": [
-              {"unit": "bytes", "min": 0}
-            ],
-            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+            "gridPos": {"h": 6, "w": 24, "x": 0, "y": 22}
           }
         ],
         "time": {

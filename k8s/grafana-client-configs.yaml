@@ -41,31 +41,42 @@ data:
         "panels": [
           {
             "id": 1,
-            "title": "Pathfinder Node Health",
+            "title": "Current Block Height",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"pathfinder\"}",
-                "legendFormat": "Node Status"
+                "expr": "current_block{job=\"pathfinder\"}",
+                "legendFormat": "Block Height"
               }
             ],
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "steps": [
-                    {"color": "red", "value": 0},
-                    {"color": "green", "value": 1}
-                  ]
-                }
+                "color": {"mode": "palette-classic"},
+                "unit": "none"
               }
             },
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+            "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}
           },
           {
             "id": 2,
+            "title": "Highest Block",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "highest_block{job=\"pathfinder\"}",
+                "legendFormat": "Highest Block"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "unit": "none"
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
             "title": "Your Validator Status",
             "type": "stat",
             "targets": [
@@ -76,9 +87,7 @@ data:
             ],
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
+                "color": {"mode": "thresholds"},
                 "thresholds": {
                   "steps": [
                     {"color": "red", "value": 0},
@@ -87,11 +96,70 @@ data:
                 }
               }
             },
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+            "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0}
           },
           {
-            "id": 3,
-            "title": "Your Validator CPU Usage",
+            "id": 4,
+            "title": "Block Processing Time",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "block_processing{job=\"pathfinder\"}",
+                "legendFormat": "Processing Time (s)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 5},
+                    {"color": "red", "value": 15}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+          },
+          {
+            "id": 5,
+            "title": "Block Height Over Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "current_block{job=\"pathfinder\"}",
+                "legendFormat": "Current Block"
+              },
+              {
+                "expr": "highest_block{job=\"pathfinder\"}",
+                "legendFormat": "Highest Block"
+              }
+            ],
+            "yAxes": [{"unit": "short"}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+          },
+          {
+            "id": 6,
+            "title": "Block Processing Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "block_processing{job=\"pathfinder\"}",
+                "legendFormat": "Processing Time"
+              },
+              {
+                "expr": "block_download{job=\"pathfinder\"}",
+                "legendFormat": "Download Time"
+              }
+            ],
+            "yAxes": [{"unit": "s"}],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+          },
+          {
+            "id": 7,
+            "title": "Your Validator Metrics",
             "type": "graph",
             "targets": [
               {
@@ -99,49 +167,21 @@ data:
                 "legendFormat": "CPU %"
               }
             ],
-            "yAxes": [
-              {"unit": "percent", "min": 0, "max": 100}
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+            "yAxes": [{"unit": "percent", "min": 0, "max": 100}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14}
           },
           {
-            "id": 4,
-            "title": "Your Validator Memory Usage",
+            "id": 8,
+            "title": "RPC Method Calls",
             "type": "graph",
             "targets": [
               {
-                "expr": "process_resident_memory_bytes{job=\"suffix-validator\"} / 1024 / 1024",
-                "legendFormat": "Memory MB"
+                "expr": "rate(rpc_method_calls_total{job=\"pathfinder\"}[5m])",
+                "legendFormat": "{{method}} ({{version}})"
               }
             ],
-            "yAxes": [
-              {"unit": "bytes", "min": 0}
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
-          },
-          {
-            "id": 5,
-            "title": "Your Attestations",
-            "type": "graph",
-            "targets": [
-              {
-                "expr": "increase(attestation_submissions_total{validator=\"suffix-validator\"}[1h])",
-                "legendFormat": "Attestations per hour"
-              }
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
-          },
-          {
-            "id": 6,
-            "title": "Current Block Height",
-            "type": "stat",
-            "targets": [
-              {
-                "expr": "network_block_number{job=\"pathfinder\"}",
-                "legendFormat": "Block Height"
-              }
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+            "yAxes": [{"unit": "reqps"}],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14}
           }
         ],
         "time": {
@@ -166,31 +206,42 @@ data:
         "panels": [
           {
             "id": 1,
-            "title": "Pathfinder Node Health",
+            "title": "Current Block Height",
             "type": "stat",
             "targets": [
               {
-                "expr": "up{job=\"pathfinder\"}",
-                "legendFormat": "Node Status"
+                "expr": "current_block{job=\"pathfinder\"}",
+                "legendFormat": "Block Height"
               }
             ],
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "steps": [
-                    {"color": "red", "value": 0},
-                    {"color": "green", "value": 1}
-                  ]
-                }
+                "color": {"mode": "palette-classic"},
+                "unit": "none"
               }
             },
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+            "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}
           },
           {
             "id": 2,
+            "title": "Highest Block",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "highest_block{job=\"pathfinder\"}",
+                "legendFormat": "Highest Block"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "unit": "none"
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
             "title": "Your Validator Status",
             "type": "stat",
             "targets": [
@@ -201,9 +252,7 @@ data:
             ],
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
+                "color": {"mode": "thresholds"},
                 "thresholds": {
                   "steps": [
                     {"color": "red", "value": 0},
@@ -212,11 +261,70 @@ data:
                 }
               }
             },
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+            "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0}
           },
           {
-            "id": 3,
-            "title": "Your Validator CPU Usage",
+            "id": 4,
+            "title": "Block Processing Time",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "block_processing{job=\"pathfinder\"}",
+                "legendFormat": "Processing Time (s)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 5},
+                    {"color": "red", "value": 15}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+          },
+          {
+            "id": 5,
+            "title": "Block Height Over Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "current_block{job=\"pathfinder\"}",
+                "legendFormat": "Current Block"
+              },
+              {
+                "expr": "highest_block{job=\"pathfinder\"}",
+                "legendFormat": "Highest Block"
+              }
+            ],
+            "yAxes": [{"unit": "short"}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+          },
+          {
+            "id": 6,
+            "title": "Block Processing Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "block_processing{job=\"pathfinder\"}",
+                "legendFormat": "Processing Time"
+              },
+              {
+                "expr": "block_download{job=\"pathfinder\"}",
+                "legendFormat": "Download Time"
+              }
+            ],
+            "yAxes": [{"unit": "s"}],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+          },
+          {
+            "id": 7,
+            "title": "Your Validator Metrics",
             "type": "graph",
             "targets": [
               {
@@ -224,49 +332,21 @@ data:
                 "legendFormat": "CPU %"
               }
             ],
-            "yAxes": [
-              {"unit": "percent", "min": 0, "max": 100}
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+            "yAxes": [{"unit": "percent", "min": 0, "max": 100}],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14}
           },
           {
-            "id": 4,
-            "title": "Your Validator Memory Usage",
+            "id": 8,
+            "title": "Gateway Requests",
             "type": "graph",
             "targets": [
               {
-                "expr": "process_resident_memory_bytes{job=\"ethchi-validator\"} / 1024 / 1024",
-                "legendFormat": "Memory MB"
+                "expr": "rate(gateway_requests_total{job=\"pathfinder\"}[5m])",
+                "legendFormat": "{{method}} - {{tag}}"
               }
             ],
-            "yAxes": [
-              {"unit": "bytes", "min": 0}
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
-          },
-          {
-            "id": 5,
-            "title": "Your Attestations",
-            "type": "graph",
-            "targets": [
-              {
-                "expr": "increase(attestation_submissions_total{validator=\"ethchi-validator\"}[1h])",
-                "legendFormat": "Attestations per hour"
-              }
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
-          },
-          {
-            "id": 6,
-            "title": "Current Block Height",
-            "type": "stat",
-            "targets": [
-              {
-                "expr": "network_block_number{job=\"pathfinder\"}",
-                "legendFormat": "Block Height"
-              }
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+            "yAxes": [{"unit": "reqps"}],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14}
           }
         ],
         "time": {

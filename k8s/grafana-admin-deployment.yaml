@@ -16,6 +16,10 @@ spec:
         app: grafana-admin
         grafana-tier: admin
     spec:
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
       containers:
       - name: grafana
         image: grafana/grafana:latest

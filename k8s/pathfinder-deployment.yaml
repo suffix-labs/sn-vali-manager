@@ -45,6 +45,8 @@ spec:
         - "--rpc.cors-domains"
         - "*"
         - "--rpc.websocket.enabled"
+        - "--monitor-address"
+        - "0.0.0.0:9546"
         envFrom:
         - secretRef:
             name: pathfinder-secrets

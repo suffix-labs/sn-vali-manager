@@ -18,6 +18,10 @@ spec:
         grafana-tier: client
         validator: suffix-validator
     spec:
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
       containers:
       - name: grafana
         image: grafana/grafana:latest
@@ -85,6 +89,10 @@ spec:
         grafana-tier: client
         validator: ethchi-validator
     spec:
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
       containers:
       - name: grafana
         image: grafana/grafana:latest

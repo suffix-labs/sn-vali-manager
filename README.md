@@ -124,6 +124,8 @@ kubectl get svc -n starknet-node -l grafana-tier
 
 ## Monitoring
 
+**Note**: Grafana dashboard configurations are automatically created as ConfigMaps during deployment. Custom dashboards can be added by modifying the ConfigMaps or adding new ones to the k8s/ directory.
+
 ### Dashboard Overview
 
 #### Admin Dashboard (Port 3000)
