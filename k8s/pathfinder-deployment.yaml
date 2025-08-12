@@ -90,7 +90,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: do-block-storage
+  storageClassName: local-path
   resources:
     requests:
       storage: 300Gi
