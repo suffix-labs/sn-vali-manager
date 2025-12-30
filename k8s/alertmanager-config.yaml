@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config-template
+data:
+  alertmanager.yml.tmpl: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'telegram'
+      routes:
+        - match:
+            severity: critical
+          receiver: 'telegram'
+          repeat_interval: 1h
+        - match:
+            severity: warning
+          receiver: 'telegram'
+          repeat_interval: 4h
+
+    receivers:
+      - name: 'telegram'
+        telegram_configs:
+          - bot_token_file: /etc/alertmanager/secrets/bot-token
+            chat_id: ${TELEGRAM_CHAT_ID}
+            api_url: https://api.telegram.org
+            parse_mode: HTML
+            message: |
+              {{ if eq .Status "firing" }}🚨{{ else }}✅{{ end }} <b>{{ .Status | toUpper }}</b>
+              {{ range .Alerts }}
+              <b>{{ .Labels.alertname }}</b>
+              Severity: {{ .Labels.severity }}
+              {{ if .Annotations.description }}{{ .Annotations.description }}{{ end }}
+              {{ end }}
+
+    inhibit_rules:
+      - source_match:
+          severity: 'critical'
+        target_match:
+          severity: 'warning'
+        equal: ['alertname']
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      initContainers:
+      - name: config-init
+        image: busybox:latest
+        command: ['sh', '-c']
+        args:
+          - |
+            CHAT_ID=$(cat /etc/alertmanager/secrets/chat-id)
+            sed "s/\${TELEGRAM_CHAT_ID}/$CHAT_ID/g" /etc/alertmanager-template/alertmanager.yml.tmpl > /etc/alertmanager/alertmanager.yml
+        volumeMounts:
+        - name: alertmanager-config-template
+          mountPath: /etc/alertmanager-template/
+        - name: alertmanager-secrets
+          mountPath: /etc/alertmanager/secrets/
+          readOnly: true
+        - name: alertmanager-config
+          mountPath: /etc/alertmanager/
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:latest
+        ports:
+        - containerPort: 9093
+        args:
+          - '--config.file=/etc/alertmanager/alertmanager.yml'
+          - '--storage.path=/alertmanager'
+        volumeMounts:
+        - name: alertmanager-config
+          mountPath: /etc/alertmanager/
+        - name: alertmanager-secrets
+          mountPath: /etc/alertmanager/secrets/
+          readOnly: true
+        - name: alertmanager-storage
+          mountPath: /alertmanager
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: alertmanager-config-template
+        configMap:
+          name: alertmanager-config-template
+      - name: alertmanager-secrets
+        secret:
+          secretName: telegram-secrets
+      - name: alertmanager-config
+        emptyDir: {}
+      - name: alertmanager-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-service
+  labels:
+    app: alertmanager
+spec:
+  selector:
+    app: alertmanager
+  ports:
+  - port: 9093
+    targetPort: 9093
+  type: ClusterIP

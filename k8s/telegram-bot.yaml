@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-bot
+  labels:
+    app: telegram-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegram-bot
+  template:
+    metadata:
+      labels:
+        app: telegram-bot
+    spec:
+      containers:
+      - name: telegram-bot
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            apk add --no-cache curl jq > /dev/null 2>&1
+
+            BOT_TOKEN=$(cat /etc/telegram/bot-token)
+            CHAT_ID=$(cat /etc/telegram/chat-id)
+            PROMETHEUS_URL="http://prometheus-service:9090"
+            OFFSET=0
+
+            echo "Telegram bot started. Listening for commands..."
+
+            # Function to send message
+            send_message() {
+              local chat_id="$1"
+              local text="$2"
+              curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+                -d "chat_id=${chat_id}" \
+                -d "parse_mode=HTML" \
+                -d "text=${text}" > /dev/null
+            }
+
+            # Function to query Prometheus
+            query() {
+              curl -s "${PROMETHEUS_URL}/api/v1/query?query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
+            }
+
+            # Function to format status
+            format_status() {
+              if [ "$1" = "1" ]; then echo "✅"; else echo "❌"; fi
+            }
+
+            format_number() {
+              if [ "$1" = "N/A" ]; then echo "N/A"
+              else printf "%.1f" "$1" 2>/dev/null || echo "$1"
+              fi
+            }
+
+            # Function to get status
+            get_status() {
+              local chat_id="$1"
+
+              CURRENT_BLOCK=$(query 'current_block{job="pathfinder"}')
+              HIGHEST_BLOCK=$(query 'highest_block{job="pathfinder"}')
+              if [ "$CURRENT_BLOCK" != "N/A" ] && [ "$HIGHEST_BLOCK" != "N/A" ]; then
+                SYNC_LAG=$((${HIGHEST_BLOCK%.*} - ${CURRENT_BLOCK%.*}))
+              else
+                SYNC_LAG="N/A"
+              fi
+
+              PATHFINDER_UP=$(query 'up{job="pathfinder"}')
+              SUFFIX_UP=$(query 'up{job="suffix-validator"}')
+              ETHCHI_UP=$(query 'up{job="ethchi-validator"}')
+
+              BLOCK_PROCESSING=$(query 'block_processing{job="pathfinder"}')
+              BLOCK_DOWNLOAD=$(query 'block_download{job="pathfinder"}')
+
+              # Sync status
+              if [ "$SYNC_LAG" = "N/A" ]; then
+                SYNC_STATUS="⚠️ Unknown"
+              elif [ "$SYNC_LAG" -le 5 ]; then
+                SYNC_STATUS="✅ Synced"
+              elif [ "$SYNC_LAG" -le 100 ]; then
+                SYNC_STATUS="⚠️ Catching up"
+              else
+                SYNC_STATUS="❌ Behind"
+              fi
+
+              MESSAGE="📊 <b>Node Status</b>
+
+            🔗 <b>Sync:</b> ${SYNC_STATUS}
+               Block: ${CURRENT_BLOCK%.*} / ${HIGHEST_BLOCK%.*} (lag: ${SYNC_LAG})
+
+            <b>Services:</b>
+            $(format_status "$PATHFINDER_UP") Pathfinder
+            $(format_status "$SUFFIX_UP") Suffix Validator
+            $(format_status "$ETHCHI_UP") Ethchi Validator
+
+            ⚡ <b>Performance:</b>
+               Block processing: $(format_number "$BLOCK_PROCESSING")s
+               Block download: $(format_number "$BLOCK_DOWNLOAD")s"
+
+              send_message "$chat_id" "$MESSAGE"
+            }
+
+            # Function to get alerts
+            get_alerts() {
+              local chat_id="$1"
+
+              ALERTS=$(curl -s "${PROMETHEUS_URL}/api/v1/alerts" | jq -r '.data.alerts')
+              ALERT_COUNT=$(echo "$ALERTS" | jq 'length')
+
+              if [ "$ALERT_COUNT" = "0" ] || [ "$ALERT_COUNT" = "null" ]; then
+                MESSAGE="✅ <b>No active alerts</b>
+
+            All systems operating normally."
+              else
+                MESSAGE="🚨 <b>Active Alerts (${ALERT_COUNT})</b>
+
+            "
+                # Parse each alert
+                echo "$ALERTS" | jq -r '.[] | "• <b>\(.labels.alertname)</b>\n  Severity: \(.labels.severity)\n  \(.annotations.description // "No description")\n"' | while read -r line; do
+                  MESSAGE="${MESSAGE}${line}"
+                done
+
+                # Simpler approach - just list alert names
+                ALERT_LIST=$(echo "$ALERTS" | jq -r '.[] | "• <b>\(.labels.alertname)</b> (\(.labels.severity))"' | head -10)
+                MESSAGE="🚨 <b>Active Alerts (${ALERT_COUNT})</b>
+
+            ${ALERT_LIST}"
+              fi
+
+              send_message "$chat_id" "$MESSAGE"
+            }
+
+            # Function to show help
+            get_help() {
+              local chat_id="$1"
+              MESSAGE="🤖 <b>StarkNet Validator Bot</b>
+
+            <b>Commands:</b>
+            /status - Current node status and sync info
+            /alerts - Show active alerts
+            /help - Show this help message"
+
+              send_message "$chat_id" "$MESSAGE"
+            }
+
+            # Main loop - poll for updates
+            while true; do
+              UPDATES=$(curl -s "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=30")
+
+              # Process each update
+              echo "$UPDATES" | jq -c '.result[]' 2>/dev/null | while read -r update; do
+                UPDATE_ID=$(echo "$update" | jq -r '.update_id')
+                OFFSET=$((UPDATE_ID + 1))
+
+                # Get message info
+                MSG_CHAT_ID=$(echo "$update" | jq -r '.message.chat.id // empty')
+                MSG_TEXT=$(echo "$update" | jq -r '.message.text // empty')
+
+                if [ -n "$MSG_TEXT" ]; then
+                  case "$MSG_TEXT" in
+                    /status|/status@*)
+                      echo "Received /status command from chat $MSG_CHAT_ID"
+                      get_status "$MSG_CHAT_ID"
+                      ;;
+                    /alerts|/alerts@*)
+                      echo "Received /alerts command from chat $MSG_CHAT_ID"
+                      get_alerts "$MSG_CHAT_ID"
+                      ;;
+                    /help|/help@*|/start|/start@*)
+                      echo "Received /help command from chat $MSG_CHAT_ID"
+                      get_help "$MSG_CHAT_ID"
+                      ;;
+                  esac
+                fi
+
+                # Update offset file for next iteration
+                echo "$OFFSET" > /tmp/offset
+              done
+
+              # Read back offset if updated
+              [ -f /tmp/offset ] && OFFSET=$(cat /tmp/offset)
+
+              sleep 1
+            done
+        volumeMounts:
+        - name: telegram-secrets
+          mountPath: /etc/telegram
+          readOnly: true
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "10m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+      volumes:
+      - name: telegram-secrets
+        secret:
+          secretName: telegram-secrets

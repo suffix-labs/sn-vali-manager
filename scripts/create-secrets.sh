@@ -116,13 +116,30 @@ kubectl create secret generic ethchi-validator-secrets \
 
 echo -e "${GREEN}  ✓ ethchi-validator-secrets created${NC}"
 
+# Generate telegram secret (optional, for alerts and daily summaries)
+if [[ -n "$TELEGRAM_BOT_TOKEN" ]] && [[ -n "$TELEGRAM_CHAT_ID" ]]; then
+    kubectl create secret generic telegram-secrets \
+        --namespace="$NAMESPACE" \
+        --from-literal=bot-token="$TELEGRAM_BOT_TOKEN" \
+        --from-literal=chat-id="$TELEGRAM_CHAT_ID" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    echo -e "${GREEN}  ✓ telegram-secrets created${NC}"
+else
+    echo -e "${YELLOW}  ⚠ Skipping telegram-secrets (TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set)${NC}"
+    echo -e "${YELLOW}    To enable Telegram notifications, set these in your .env file${NC}"
+fi
+
 echo ""
 echo -e "${GREEN}🎉 Successfully created all Kubernetes secrets!${NC}"
 echo ""
 echo -e "${BLUE}📋 Created secrets in namespace '$NAMESPACE':${NC}"
 echo "  • pathfinder-secrets (Ethereum API access)"
-echo "  • suffix-validator-secrets (Suffix Validator private key for local signing)"  
+echo "  • suffix-validator-secrets (Suffix Validator private key for local signing)"
 echo "  • ethchi-validator-secrets (Ethchi Validator private key for local signing)"
+if [[ -n "$TELEGRAM_BOT_TOKEN" ]] && [[ -n "$TELEGRAM_CHAT_ID" ]]; then
+    echo "  • telegram-secrets (Telegram bot credentials for alerts)"
+fi
 echo ""
 echo -e "${BLUE}🔍 You can verify the secrets were created with:${NC}"
 echo -e "${YELLOW}  kubectl get secrets -n $NAMESPACE${NC}"

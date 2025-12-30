@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+data:
+  alerts.yml: |
+    groups:
+      - name: validator_alerts
+        rules:
+          - alert: SuffixValidatorDown
+            expr: up{job="suffix-validator"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Suffix Validator is down"
+              description: "Suffix validator has been unreachable for more than 2 minutes."
+
+          - alert: EthchiValidatorDown
+            expr: up{job="ethchi-validator"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Ethchi Validator is down"
+              description: "Ethchi validator has been unreachable for more than 2 minutes."
+
+      - name: pathfinder_alerts
+        rules:
+          - alert: PathfinderDown
+            expr: up{job="pathfinder"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pathfinder node is down"
+              description: "Pathfinder StarkNet node has been unreachable for more than 2 minutes."
+
+          - alert: PathfinderSyncLag
+            expr: (highest_block{job="pathfinder"} - current_block{job="pathfinder"}) > 100
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pathfinder sync lag detected"
+              description: "Pathfinder is {{ $value }} blocks behind. Node may be having sync issues."
+
+          - alert: PathfinderSlowProcessing
+            expr: block_processing{job="pathfinder"} > 15
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pathfinder block processing slow"
+              description: "Block processing time is {{ $value }}s (threshold: 15s)."
+
+          - alert: PathfinderSlowDownload
+            expr: block_download{job="pathfinder"} > 30
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pathfinder block download slow"
+              description: "Block download time is {{ $value }}s (threshold: 30s)."
+
+      - name: prometheus_alerts
+        rules:
+          - alert: PrometheusTargetMissing
+            expr: up == 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Prometheus target missing"
+              description: "Target {{ $labels.job }} is down."
