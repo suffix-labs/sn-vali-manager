@@ -84,6 +84,7 @@ kubectl port-forward -n starknet-node svc/pathfinder-service 9545:9545        # 
 | `k8s/prometheus-config.yaml` | Prometheus scrape configuration and deployment |
 | `k8s/prometheus-rules.yaml` | Alerting rules for outages and sync issues |
 | `k8s/alertmanager-config.yaml` | Alertmanager with Telegram webhook |
+| `k8s/telegram-bot.yaml` | Interactive bot for /status and /alerts commands |
 | `k8s/telegram-daily-summary.yaml` | CronJob for daily status report at 8 AM Eastern |
 | `k8s/grafana-admin-deployment.yaml` | Admin dashboard (full access) |
 | `k8s/grafana-client-deployments.yaml` | Per-validator client dashboards |
@@ -107,6 +108,7 @@ Private keys are stored as Kubernetes secrets and never committed to git.
 When configured, you get:
 - Real-time alerts for validator/node outages and sync issues (via Alertmanager)
 - Daily summary at 8 AM Eastern with sync status, uptime, and performance metrics
+- Interactive commands: `/status`, `/alerts`, `/help`
 
 ## Adding a New Validator
 
