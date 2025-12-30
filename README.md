@@ -274,3 +274,8 @@ echo "Access your validator dashboard:"
 echo "kubectl port-forward -n starknet-node svc/grafana-suffix-validator-service 3001:3001" 
 echo "Then visit http://localhost:3001 (no login required)"
 ```
+
+
+### Starknet Resources
+
+[pathfider snapshots](https://eqlabs.github.io/pathfinder/database-snapshots)
