@@ -7,6 +7,9 @@ resources:
   - ethchi-validator-deployment.yaml
   - prometheus-rbac.yaml
   - prometheus-config.yaml
+  - prometheus-rules.yaml
+  - alertmanager-config.yaml
+  - telegram-daily-summary.yaml
   - grafana-admin-deployment.yaml
   - grafana-admin-config.yaml
   - grafana-client-deployments.yaml

@@ -1,0 +1,151 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: telegram-daily-summary
+  labels:
+    app: telegram-daily-summary
+spec:
+  schedule: "0 13 * * *"  # 8:00 AM Eastern (13:00 UTC)
+  timeZone: "America/New_York"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: daily-summary
+            image: alpine:latest
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                apk add --no-cache curl jq > /dev/null 2>&1
+
+                PROMETHEUS_URL="http://prometheus-service:9090"
+                BOT_TOKEN=$(cat /etc/telegram/bot-token)
+                CHAT_ID=$(cat /etc/telegram/chat-id)
+                DATE=$(date +"%b %d, %Y")
+
+                # Query Prometheus
+                query() {
+                  curl -s "${PROMETHEUS_URL}/api/v1/query?query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
+                }
+
+                query_avg() {
+                  curl -s "${PROMETHEUS_URL}/api/v1/query?query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
+                }
+
+                # Get metrics
+                CURRENT_BLOCK=$(query 'current_block{job="pathfinder"}')
+                HIGHEST_BLOCK=$(query 'highest_block{job="pathfinder"}')
+                if [ "$CURRENT_BLOCK" != "N/A" ] && [ "$HIGHEST_BLOCK" != "N/A" ]; then
+                  SYNC_LAG=$((${HIGHEST_BLOCK%.*} - ${CURRENT_BLOCK%.*}))
+                else
+                  SYNC_LAG="N/A"
+                fi
+
+                SUFFIX_UP=$(query 'up{job="suffix-validator"}')
+                ETHCHI_UP=$(query 'up{job="ethchi-validator"}')
+                PATHFINDER_UP=$(query 'up{job="pathfinder"}')
+
+                # 24h uptime calculation (percentage of time up)
+                SUFFIX_UPTIME=$(query_avg 'avg_over_time(up{job="suffix-validator"}[24h]) * 100')
+                ETHCHI_UPTIME=$(query_avg 'avg_over_time(up{job="ethchi-validator"}[24h]) * 100')
+
+                # Performance metrics (24h average)
+                BLOCK_PROCESSING=$(query_avg 'avg_over_time(block_processing{job="pathfinder"}[24h])')
+                BLOCK_DOWNLOAD=$(query_avg 'avg_over_time(block_download{job="pathfinder"}[24h])')
+
+                # CPU usage (rate over 24h)
+                PATHFINDER_CPU=$(query_avg 'rate(process_cpu_seconds_total{job="pathfinder"}[24h]) * 100')
+
+                # Count alerts fired in last 24h
+                ALERTS_COUNT=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=count(ALERTS{alertstate=\"firing\"})" | jq -r '.data.result[0].value[1] // "0"')
+
+                # Format status icons
+                format_status() {
+                  if [ "$1" = "1" ]; then echo "✅"; else echo "❌"; fi
+                }
+
+                format_sync() {
+                  if [ "$1" = "N/A" ]; then
+                    echo "⚠️ Unknown"
+                  elif [ "$1" -le 5 ]; then
+                    echo "✅ Synced"
+                  elif [ "$1" -le 100 ]; then
+                    echo "⚠️ Catching up"
+                  else
+                    echo "❌ Behind"
+                  fi
+                }
+
+                format_number() {
+                  if [ "$1" = "N/A" ]; then
+                    echo "N/A"
+                  else
+                    printf "%.1f" "$1" 2>/dev/null || echo "$1"
+                  fi
+                }
+
+                format_percent() {
+                  if [ "$1" = "N/A" ]; then
+                    echo "N/A"
+                  else
+                    printf "%.0f%%" "$1" 2>/dev/null || echo "$1"
+                  fi
+                }
+
+                SYNC_STATUS=$(format_sync "$SYNC_LAG")
+                PATHFINDER_STATUS=$(format_status "$PATHFINDER_UP")
+                SUFFIX_STATUS=$(format_status "$SUFFIX_UP")
+                ETHCHI_STATUS=$(format_status "$ETHCHI_UP")
+
+                # Count online validators
+                ONLINE_COUNT=0
+                [ "$SUFFIX_UP" = "1" ] && ONLINE_COUNT=$((ONLINE_COUNT + 1))
+                [ "$ETHCHI_UP" = "1" ] && ONLINE_COUNT=$((ONLINE_COUNT + 1))
+
+                # Build message
+                MESSAGE="📊 <b>StarkNet Daily Report - ${DATE}</b>
+
+                🔗 <b>Node Sync:</b> ${SYNC_STATUS}
+                   Block: ${CURRENT_BLOCK%.*} / ${HIGHEST_BLOCK%.*} (lag: ${SYNC_LAG})
+
+                <b>Services:</b>
+                ${PATHFINDER_STATUS} Pathfinder
+                ${SUFFIX_STATUS} Suffix Validator ($(format_percent "$SUFFIX_UPTIME") uptime 24h)
+                ${ETHCHI_STATUS} Ethchi Validator ($(format_percent "$ETHCHI_UPTIME") uptime 24h)
+
+                ⚡ <b>Performance (24h avg):</b>
+                   Block processing: $(format_number "$BLOCK_PROCESSING")s
+                   Block download: $(format_number "$BLOCK_DOWNLOAD")s
+
+                💻 <b>Resources:</b>
+                   Pathfinder CPU: $(format_percent "$PATHFINDER_CPU")
+
+                🔔 Active alerts: ${ALERTS_COUNT}"
+
+                # Send to Telegram
+                curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+                  -d "chat_id=${CHAT_ID}" \
+                  -d "parse_mode=HTML" \
+                  -d "text=${MESSAGE}" > /dev/null
+
+                echo "Daily summary sent to Telegram"
+            volumeMounts:
+            - name: telegram-secrets
+              mountPath: /etc/telegram
+              readOnly: true
+            resources:
+              requests:
+                memory: "32Mi"
+                cpu: "10m"
+              limits:
+                memory: "64Mi"
+                cpu: "50m"
+          volumes:
+          - name: telegram-secrets
+            secret:
+              secretName: telegram-secrets

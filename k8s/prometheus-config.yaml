@@ -8,9 +8,14 @@ data:
       scrape_interval: 15s
       evaluation_interval: 15s
 
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+              - alertmanager-service:9093
+
     rule_files:
-      # - "first_rules.yml"
-      # - "second_rules.yml"
+      - "/etc/prometheus/rules/*.yml"
 
     scrape_configs:
       - job_name: 'prometheus'
@@ -102,6 +107,8 @@ spec:
         volumeMounts:
         - name: prometheus-config-volume
           mountPath: /etc/prometheus/
+        - name: prometheus-rules-volume
+          mountPath: /etc/prometheus/rules/
         - name: prometheus-storage-volume
           mountPath: /prometheus/
         resources:
@@ -116,6 +123,10 @@ spec:
         configMap:
           defaultMode: 420
           name: prometheus-config
+      - name: prometheus-rules-volume
+        configMap:
+          defaultMode: 420
+          name: prometheus-rules
       - name: prometheus-storage-volume
         persistentVolumeClaim:
           claimName: prometheus-pvc
