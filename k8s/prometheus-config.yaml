@@ -89,9 +89,18 @@ spec:
     spec:
       serviceAccountName: prometheus
       securityContext:
-        fsGroup: 2000
-        runAsUser: 1000
+        fsGroup: 65534
+        runAsUser: 65534
         runAsNonRoot: true
+      initContainers:
+      - name: fix-permissions
+        image: busybox:latest
+        command: ["sh", "-c", "chown -R 65534:65534 /prometheus"]
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: prometheus-storage-volume
+          mountPath: /prometheus/
       containers:
       - name: prometheus
         image: prom/prometheus:latest
