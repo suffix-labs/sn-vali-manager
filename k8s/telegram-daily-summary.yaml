@@ -30,16 +30,16 @@ spec:
 
                 # Query Prometheus
                 query() {
-                  curl -s "${PROMETHEUS_URL}/api/v1/query?query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
+                  curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode "query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
                 }
 
                 query_avg() {
-                  curl -s "${PROMETHEUS_URL}/api/v1/query?query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
+                  curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode "query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
                 }
 
                 # Get metrics
-                CURRENT_BLOCK=$(query 'current_block{job="pathfinder"}')
-                HIGHEST_BLOCK=$(query 'highest_block{job="pathfinder"}')
+                CURRENT_BLOCK=$(query 'current_block')
+                HIGHEST_BLOCK=$(query 'highest_block')
                 if [ "$CURRENT_BLOCK" != "N/A" ] && [ "$HIGHEST_BLOCK" != "N/A" ]; then
                   SYNC_LAG=$((${HIGHEST_BLOCK%.*} - ${CURRENT_BLOCK%.*}))
                 else
@@ -55,14 +55,14 @@ spec:
                 ETHCHI_UPTIME=$(query_avg 'avg_over_time(up{job="ethchi-validator"}[24h]) * 100')
 
                 # Performance metrics (24h average)
-                BLOCK_PROCESSING=$(query_avg 'avg_over_time(block_processing{job="pathfinder"}[24h])')
-                BLOCK_DOWNLOAD=$(query_avg 'avg_over_time(block_download{job="pathfinder"}[24h])')
+                BLOCK_PROCESSING=$(query_avg 'avg_over_time(block_processing[24h])')
+                BLOCK_DOWNLOAD=$(query_avg 'avg_over_time(block_download[24h])')
 
                 # CPU usage (rate over 24h)
                 PATHFINDER_CPU=$(query_avg 'rate(process_cpu_seconds_total{job="pathfinder"}[24h]) * 100')
 
                 # Count alerts fired in last 24h
-                ALERTS_COUNT=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=count(ALERTS{alertstate=\"firing\"})" | jq -r '.data.result[0].value[1] // "0"')
+                ALERTS_COUNT=$(curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode 'query=count(ALERTS{alertstate="firing"})' | jq -r '.data.result[0].value[1] // "0"')
 
                 # Format status icons
                 format_status() {
