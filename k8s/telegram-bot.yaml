@@ -41,7 +41,7 @@ spec:
 
             # Function to query Prometheus
             query() {
-              curl -s "${PROMETHEUS_URL}/api/v1/query?query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
+              curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode "query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
             }
 
             # Function to format status
@@ -59,8 +59,8 @@ spec:
             get_status() {
               local chat_id="$1"
 
-              CURRENT_BLOCK=$(query 'current_block{job="pathfinder"}')
-              HIGHEST_BLOCK=$(query 'highest_block{job="pathfinder"}')
+              CURRENT_BLOCK=$(query 'current_block')
+              HIGHEST_BLOCK=$(query 'highest_block')
               if [ "$CURRENT_BLOCK" != "N/A" ] && [ "$HIGHEST_BLOCK" != "N/A" ]; then
                 SYNC_LAG=$((${HIGHEST_BLOCK%.*} - ${CURRENT_BLOCK%.*}))
               else
@@ -71,8 +71,8 @@ spec:
               SUFFIX_UP=$(query 'up{job="suffix-validator"}')
               ETHCHI_UP=$(query 'up{job="ethchi-validator"}')
 
-              BLOCK_PROCESSING=$(query 'block_processing{job="pathfinder"}')
-              BLOCK_DOWNLOAD=$(query 'block_download{job="pathfinder"}')
+              BLOCK_PROCESSING=$(query 'block_processing')
+              BLOCK_DOWNLOAD=$(query 'block_download')
 
               # Sync status
               if [ "$SYNC_LAG" = "N/A" ]; then
