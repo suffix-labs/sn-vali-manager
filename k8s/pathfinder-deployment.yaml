@@ -62,8 +62,9 @@ spec:
           mountPath: /usr/share/pathfinder/data
       volumes:
       - name: pathfinder-data
-        persistentVolumeClaim:
-          claimName: pathfinder-pvc
+        hostPath:
+          path: /home/trbiv/pathfinder/data
+          type: Directory
 ---
 apiVersion: v1
 kind: Service
@@ -82,17 +83,3 @@ spec:
     port: 9546
     targetPort: 9546
   type: ClusterIP
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pathfinder-pvc
-  labels:
-    app: pathfinder
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 300Gi
