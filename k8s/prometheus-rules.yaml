@@ -63,13 +63,3 @@ data:
               summary: "Pathfinder block download slow"
               description: "Block download time is {{ $value }}s (threshold: 30s)."
 
-      - name: prometheus_alerts
-        rules:
-          - alert: PrometheusTargetMissing
-            expr: up == 0
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: "Prometheus target missing"
-              description: "Target {{ $labels.job }} is down."
