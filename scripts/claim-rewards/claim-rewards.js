@@ -76,16 +76,39 @@ async function getProvider() {
 async function checkUnclaimedRewards(provider, stakerAddress) {
   try {
     const contract = new Contract(STAKING_ABI, STAKING_CONTRACT_ADDRESS, provider);
-    const result = await contract.internal_staker_info(stakerAddress);
 
+    // Call raw to get the actual calldata
+    const calldata = await provider.callContract({
+      contractAddress: STAKING_CONTRACT_ADDRESS,
+      entrypoint: 'internal_staker_info',
+      calldata: [stakerAddress]
+    });
+
+    // Parse the raw response - internal_staker_info returns:
+    // reward_address, operational_address, unstake_time (Option), amount_own (u128),
+    // index (u64), unclaimed_rewards_own (u128), pool_info (Option)
     const formatAddress = (v) => '0x' + BigInt(v).toString(16).padStart(64, '0');
     const formatStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(4) + ' STRK';
 
-    console.log(`  Reward Address: ${formatAddress(result.reward_address)}`);
-    console.log(`  Operational Address: ${formatAddress(result.operational_address)}`);
-    console.log(`  Staked Amount: ${formatStrk(result.amount_own)}`);
+    console.log(`  Raw calldata length: ${calldata.length}`);
+    console.log(`  Reward Address: ${formatAddress(calldata[0])}`);
+    console.log(`  Operational Address: ${formatAddress(calldata[1])}`);
 
-    return result;
+    // Option<u64> unstake_time: index 2 is variant (0=None, 1=Some), if Some then index 3 is value
+    const hasUnstakeTime = calldata[2] === '0x1';
+    let idx = hasUnstakeTime ? 4 : 3;
+
+    // u128 amount_own (may be 2 felts for u256, but u128 should be 1)
+    console.log(`  Staked Amount: ${formatStrk(calldata[idx])}`);
+    idx++;
+
+    // u64 index
+    idx++;
+
+    // u128 unclaimed_rewards_own
+    console.log(`  Unclaimed Rewards: ${formatStrk(calldata[idx])}`);
+
+    return calldata;
   } catch (error) {
     console.log(`  Could not fetch staker info: ${error.message}`);
     return null;
