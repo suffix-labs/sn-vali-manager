@@ -30,10 +30,18 @@ const STAKING_ABI = [
     state_mutability: 'external'
   },
   {
-    name: 'staker_info_v1',
+    name: 'internal_staker_info',
     type: 'function',
     inputs: [{ name: 'staker_address', type: 'core::starknet::contract_address::ContractAddress' }],
-    outputs: [{ type: 'contracts::staking::objects::StakerInfoV1' }],
+    outputs: [
+      { name: 'reward_address', type: 'core::starknet::contract_address::ContractAddress' },
+      { name: 'operational_address', type: 'core::starknet::contract_address::ContractAddress' },
+      { name: 'unstake_time', type: 'core::option::Option::<core::integer::u64>' },
+      { name: 'amount_own', type: 'core::integer::u128' },
+      { name: 'index', type: 'core::integer::u64' },
+      { name: 'unclaimed_rewards_own', type: 'core::integer::u128' },
+      { name: 'pool_info', type: 'core::option::Option::<core::starknet::contract_address::ContractAddress>' }
+    ],
     state_mutability: 'view'
   }
 ];
@@ -68,7 +76,7 @@ async function getProvider() {
 async function checkUnclaimedRewards(provider, stakerAddress) {
   try {
     const contract = new Contract(STAKING_ABI, STAKING_CONTRACT_ADDRESS, provider);
-    const result = await contract.staker_info_v1(stakerAddress);
+    const result = await contract.internal_staker_info(stakerAddress);
 
     // Debug: show raw result structure
     console.log(`  Raw result:`, JSON.stringify(result, (k, v) => typeof v === 'bigint' ? v.toString() : v, 2));
