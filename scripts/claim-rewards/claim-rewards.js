@@ -78,8 +78,12 @@ async function checkUnclaimedRewards(provider, stakerAddress) {
     const contract = new Contract(STAKING_ABI, STAKING_CONTRACT_ADDRESS, provider);
     const result = await contract.internal_staker_info(stakerAddress);
 
-    // Debug: show raw result structure
-    console.log(`  Raw result:`, JSON.stringify(result, (k, v) => typeof v === 'bigint' ? v.toString() : v, 2));
+    const formatAddress = (v) => '0x' + BigInt(v).toString(16).padStart(64, '0');
+    const formatStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(4) + ' STRK';
+
+    console.log(`  Reward Address: ${formatAddress(result.reward_address)}`);
+    console.log(`  Operational Address: ${formatAddress(result.operational_address)}`);
+    console.log(`  Staked Amount: ${formatStrk(result.amount_own)}`);
 
     return result;
   } catch (error) {
