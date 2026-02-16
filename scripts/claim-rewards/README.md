@@ -8,6 +8,16 @@ Automated script to claim staking rewards from the StarkNet staking contract.
 
 Reference: [StarkNet Staking Documentation](https://docs.starknet.io/staking/overview)
 
+## Finding Your Staker Address
+
+If you don't know your staker address, run the lookup script (requires your operational address in `.env`):
+
+```bash
+node lookup-staker.js
+```
+
+This queries the staking contract using `get_attestation_info_by_operational_address()` and prints the staker address in hex format.
+
 ## Setup
 
 1. Install dependencies:
@@ -85,6 +95,5 @@ crontab -e
 - Staking contract paused
 
 **RPC errors**: Try a different RPC endpoint:
-- `https://starknet-mainnet.public.blastapi.io` (default)
-- `https://free-rpc.nethermind.io/mainnet-juno`
+- `https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_7/demo` (default)
 - Your own Pathfinder node: `http://localhost:9545`

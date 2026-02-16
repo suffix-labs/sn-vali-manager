@@ -43,7 +43,8 @@ async function lookupByOperational(provider, contract, name, operationalAddress)
     console.log('Raw result:', result);
 
     // Result is tuple: (staker_address, epoch)
-    const stakerAddress = result[0] || result.staker_address;
+    const stakerAddressRaw = result[0] || result.staker_address;
+    const stakerAddress = '0x' + BigInt(stakerAddressRaw).toString(16).padStart(64, '0');
     console.log(`\nStaker Address: ${stakerAddress}`);
 
     // Now get full staker info
@@ -79,8 +80,8 @@ async function main() {
 
   for (const v of validators) {
     if (v.operational && v.operational !== '0x1234567890123456789012345678901234567890') {
-      const staker = await lookupByOperational(provider, contract, v.name, v.operational);
-      results.push({ name: v.name, staker });
+      const stakerHex = await lookupByOperational(provider, contract, v.name, v.operational);
+      results.push({ name: v.name, staker: stakerHex });
     } else {
       console.log(`\n=== ${v.name} ===`);
       console.log('Skipped: No operational address configured in .env');

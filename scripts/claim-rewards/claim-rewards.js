@@ -63,7 +63,7 @@ const VALIDATORS = [
 const DRY_RUN = process.env.DRY_RUN === 'true';
 
 async function getProvider() {
-  const rpcUrl = process.env.STARKNET_RPC_URL || 'https://starknet-mainnet.public.blastapi.io';
+  const rpcUrl = process.env.STARKNET_RPC_URL || 'https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_7/demo';
   return new RpcProvider({ nodeUrl: rpcUrl });
 }
 
@@ -157,7 +157,7 @@ async function main() {
   console.log('==================================');
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no transactions will be sent)' : 'LIVE'}`);
   console.log(`Staking Contract: ${STAKING_CONTRACT_ADDRESS}`);
-  console.log(`RPC: ${process.env.STARKNET_RPC_URL || 'https://starknet-mainnet.public.blastapi.io'}`);
+  console.log(`RPC: ${process.env.STARKNET_RPC_URL || 'https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_7/demo'}`);
 
   const results = [];
 
