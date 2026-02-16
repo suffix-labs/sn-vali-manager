@@ -17,34 +17,13 @@ const __dirname = dirname(__filename);
 // Load .env from project root
 dotenv.config({ path: join(__dirname, '../../.env') });
 
+import { readFileSync } from 'fs';
+
 // StarkNet Mainnet Staking Contract
 const STAKING_CONTRACT_ADDRESS = '0x00ca1702e64c81d9a07b86bd2c540188d92a2c73cf5cc0e508d949015e7e84a7';
 
-// Minimal ABI for the staking contract
-const STAKING_ABI = [
-  {
-    name: 'claim_rewards',
-    type: 'function',
-    inputs: [{ name: 'staker_address', type: 'core::starknet::contract_address::ContractAddress' }],
-    outputs: [{ type: 'core::integer::u128' }],
-    state_mutability: 'external'
-  },
-  {
-    name: 'internal_staker_info',
-    type: 'function',
-    inputs: [{ name: 'staker_address', type: 'core::starknet::contract_address::ContractAddress' }],
-    outputs: [
-      { name: 'reward_address', type: 'core::starknet::contract_address::ContractAddress' },
-      { name: 'operational_address', type: 'core::starknet::contract_address::ContractAddress' },
-      { name: 'unstake_time', type: 'core::option::Option::<core::integer::u64>' },
-      { name: 'amount_own', type: 'core::integer::u128' },
-      { name: 'index', type: 'core::integer::u64' },
-      { name: 'unclaimed_rewards_own', type: 'core::integer::u128' },
-      { name: 'pool_info', type: 'core::option::Option::<core::starknet::contract_address::ContractAddress>' }
-    ],
-    state_mutability: 'view'
-  }
-];
+// Load full ABI from file
+const STAKING_ABI = JSON.parse(readFileSync(join(__dirname, 'staking-abi.json'), 'utf-8'));
 
 // Validator configurations from environment
 // Can use either dedicated reward account OR operational account to claim
@@ -77,38 +56,18 @@ async function checkUnclaimedRewards(provider, stakerAddress) {
   try {
     const contract = new Contract(STAKING_ABI, STAKING_CONTRACT_ADDRESS, provider);
 
-    // Call raw to get the actual calldata
-    const calldata = await provider.callContract({
-      contractAddress: STAKING_CONTRACT_ADDRESS,
-      entrypoint: 'internal_staker_info',
-      calldata: [stakerAddress]
-    });
+    // Use staker_info_v1 which has amount_own and unclaimed_rewards_own
+    const result = await contract.staker_info_v1(stakerAddress);
 
-    // Parse the raw response - internal_staker_info returns:
-    // reward_address, operational_address, unstake_time (Option), amount_own (u128),
-    // index (u64), unclaimed_rewards_own (u128), pool_info (Option)
     const formatAddress = (v) => '0x' + BigInt(v).toString(16).padStart(64, '0');
     const formatStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(4) + ' STRK';
 
-    console.log(`  Raw calldata length: ${calldata.length}`);
-    console.log(`  Reward Address: ${formatAddress(calldata[0])}`);
-    console.log(`  Operational Address: ${formatAddress(calldata[1])}`);
+    console.log(`  Reward Address: ${formatAddress(result.reward_address)}`);
+    console.log(`  Operational Address: ${formatAddress(result.operational_address)}`);
+    console.log(`  Staked Amount: ${formatStrk(result.amount_own)}`);
+    console.log(`  Unclaimed Rewards: ${formatStrk(result.unclaimed_rewards_own)}`);
 
-    // Option<u64> unstake_time: index 2 is variant (0=None, 1=Some), if Some then index 3 is value
-    const hasUnstakeTime = calldata[2] === '0x1';
-    let idx = hasUnstakeTime ? 4 : 3;
-
-    // u128 amount_own (may be 2 felts for u256, but u128 should be 1)
-    console.log(`  Staked Amount: ${formatStrk(calldata[idx])}`);
-    idx++;
-
-    // u64 index
-    idx++;
-
-    // u128 unclaimed_rewards_own
-    console.log(`  Unclaimed Rewards: ${formatStrk(calldata[idx])}`);
-
-    return calldata;
+    return result;
   } catch (error) {
     console.log(`  Could not fetch staker info: ${error.message}`);
     return null;
