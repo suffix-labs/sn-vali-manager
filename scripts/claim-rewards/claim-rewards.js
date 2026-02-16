@@ -43,19 +43,21 @@ const STAKING_ABI = [
 ];
 
 // Validator configurations from environment
+// Can use either dedicated reward account OR operational account to claim
 const VALIDATORS = [
   {
     name: 'Suffix',
     stakerAddress: process.env.SUFFIX_STAKER_ADDRESS,
-    accountAddress: process.env.SUFFIX_REWARD_ACCOUNT_ADDRESS,
-    privateKey: process.env.SUFFIX_REWARD_ACCOUNT_PRIVATE_KEY,
+    // Prefer reward account if set, fall back to operational account
+    accountAddress: process.env.SUFFIX_REWARD_ACCOUNT_ADDRESS || process.env.SUFFIX_VALIDATOR_STAKER_OPERATIONAL_ADDRESS,
+    privateKey: process.env.SUFFIX_REWARD_ACCOUNT_PRIVATE_KEY || process.env.SUFFIX_VALIDATOR_OPERATIONAL_PRIVATE_KEY,
     enabled: process.env.SUFFIX_CLAIM_ENABLED !== 'false'
   },
   {
     name: 'Ethchi',
     stakerAddress: process.env.ETHCHI_STAKER_ADDRESS,
-    accountAddress: process.env.ETHCHI_REWARD_ACCOUNT_ADDRESS,
-    privateKey: process.env.ETHCHI_REWARD_ACCOUNT_PRIVATE_KEY,
+    accountAddress: process.env.ETHCHI_REWARD_ACCOUNT_ADDRESS || process.env.ETHCHI_VALIDATOR_STAKER_OPERATIONAL_ADDRESS,
+    privateKey: process.env.ETHCHI_REWARD_ACCOUNT_PRIVATE_KEY || process.env.ETHCHI_VALIDATOR_OPERATIONAL_PRIVATE_KEY,
     enabled: process.env.ETHCHI_CLAIM_ENABLED !== 'false'
   }
 ];
