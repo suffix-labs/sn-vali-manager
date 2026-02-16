@@ -118,20 +118,23 @@ async function claimRewards(validator) {
     if (DRY_RUN) {
       console.log(`  [DRY RUN] Simulating transaction...`);
       try {
-        const simulation = await account.simulateTransaction([call], { skipValidate: false });
-        if (simulation[0]?.transaction_trace?.execute_invocation?.revert_reason) {
-          const reason = simulation[0].transaction_trace.execute_invocation.revert_reason;
-          console.log(`  [DRY RUN] WOULD FAIL: ${reason}`);
-          return { validator: name, status: 'dry_run_failed', error: reason };
-        }
-        console.log(`  [DRY RUN] Simulation SUCCESS - transaction would claim rewards`);
+        // Use estimateFee to simulate - it will fail if permissions are wrong
+        const estimate = await account.estimateInvokeFee(call);
+        const feeInStrk = (Number(estimate.overall_fee) / 1e18).toFixed(6);
+        console.log(`  [DRY RUN] Simulation SUCCESS`);
+        console.log(`  [DRY RUN] Estimated fee: ${feeInStrk} STRK`);
         return { validator: name, status: 'dry_run_ok' };
       } catch (simError) {
         // Parse the error message for useful info
         const errMsg = simError.message || String(simError);
         if (errMsg.includes('staker address or reward address')) {
-          console.log(`  [DRY RUN] WOULD FAIL: Account ${accountAddress} is not authorized to claim`);
+          console.log(`  [DRY RUN] WOULD FAIL: Account ${accountAddress} is not authorized`);
           console.log(`            Only staker or reward address can claim rewards`);
+        } else if (errMsg.includes('revert_reason')) {
+          // Try to extract the actual reason
+          const match = errMsg.match(/"([^"]+)"/g);
+          const reason = match ? match.join(' ') : errMsg;
+          console.log(`  [DRY RUN] WOULD FAIL: ${reason}`);
         } else {
           console.log(`  [DRY RUN] WOULD FAIL: ${errMsg}`);
         }
