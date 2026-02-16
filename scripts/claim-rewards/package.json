@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "claim": "node claim-rewards.js",
-    "claim:dry-run": "DRY_RUN=true node claim-rewards.js"
+    "claim:dry-run": "DRY_RUN=true node claim-rewards.js",
+    "web": "cd web && npm run dev"
   },
   "dependencies": {
     "starknet": "^6.11.0",

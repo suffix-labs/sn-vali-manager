@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StarkNet Validator Reward Claimer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+    }
+    h1 { color: #00d4ff; margin-bottom: 5px; }
+    .subtitle { color: #888; margin-bottom: 30px; }
+    button {
+      background: #00d4ff;
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: #00b8e6; }
+    button:disabled { background: #444; color: #888; cursor: not-allowed; }
+    .card {
+      background: #252542;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .card h3 { margin-top: 0; color: #00d4ff; display: flex; justify-content: space-between; align-items: center; }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #333;
+    }
+    .row:last-child { border-bottom: none; }
+    .label { color: #888; }
+    .value { font-family: monospace; text-align: right; }
+    .value.highlight { color: #00ff88; font-size: 1.3em; font-weight: bold; }
+    .value.address { font-size: 0.75em; word-break: break-all; max-width: 300px; }
+    .status { padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 0.9em; }
+    .status.success { background: #1a4a1a; color: #00ff88; }
+    .status.error { background: #4a1a1a; color: #ff6666; }
+    .status.pending { background: #4a4a1a; color: #ffff66; }
+    .status.info { background: #1a1a4a; color: #6666ff; }
+    a { color: #00d4ff; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .loading { color: #888; font-style: italic; }
+    .claim-btn { margin-top: 15px; width: 100%; }
+    .claim-btn.claiming { background: #4a4a1a; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Reward Claimer</h1>
+      <p class="subtitle">StarkNet Validator Staking Rewards</p>
+    </div>
+    <button id="connect-btn">Connect Wallet</button>
+  </div>
+
+  <div id="validators"></div>
+  <div id="global-status"></div>
+
+  <script type="module">
+    import { connect } from 'get-starknet';
+    import { Contract, RpcProvider } from 'starknet';
+
+    const STAKING_CONTRACT = '0x00ca1702e64c81d9a07b86bd2c540188d92a2c73cf5cc0e508d949015e7e84a7';
+    const RPC_URL = 'https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_7/demo';
+
+    const VALIDATORS = [
+      { name: 'Suffix', staker: '0x02dc260794e4c2eeae87b1403a88385a72c18a5844d220b88117b2965a8cf3a5' },
+      { name: 'Ethchi', staker: '0x0223d82a4ea1c98b163a4c7b9921202613f2b335292216e215a9a03d20fea2b2' }
+    ];
+
+    let wallet = null;
+    let provider = new RpcProvider({ nodeUrl: RPC_URL });
+    let stakingAbi = null;
+    let validatorData = {};
+
+    const formatAddress = (v) => '0x' + BigInt(v).toString(16).padStart(64, '0');
+    const formatStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(4);
+    const shortAddr = (a) => a.slice(0, 10) + '...' + a.slice(-6);
+
+    async function init() {
+      renderValidators();
+
+      // Load ABI
+      try {
+        const classHash = await provider.getClassHashAt(STAKING_CONTRACT);
+        const contractClass = await provider.getClass(classHash);
+        stakingAbi = contractClass.abi;
+      } catch (e) {
+        showGlobalStatus('Failed to load contract ABI: ' + e.message, 'error');
+        return;
+      }
+
+      // Load validator data
+      for (const v of VALIDATORS) {
+        await loadValidatorInfo(v.name, v.staker);
+      }
+    }
+
+    function renderValidators() {
+      const container = document.getElementById('validators');
+      container.innerHTML = VALIDATORS.map(v => `
+        <div class="card" id="card-${v.name}">
+          <h3>${v.name} <span class="value address">${shortAddr(v.staker)}</span></h3>
+          <div id="info-${v.name}" class="loading">Loading...</div>
+          <button class="claim-btn" id="claim-${v.name}" disabled onclick="claimRewards('${v.name}', '${v.staker}')">
+            Claim Rewards
+          </button>
+          <div id="status-${v.name}"></div>
+        </div>
+      `).join('');
+    }
+
+    async function loadValidatorInfo(name, stakerAddress) {
+      const infoEl = document.getElementById(`info-${name}`);
+      const claimBtn = document.getElementById(`claim-${name}`);
+
+      try {
+        const contract = new Contract(stakingAbi, STAKING_CONTRACT, provider);
+        const result = await contract.staker_info_v1(stakerAddress);
+
+        const rewardAddr = formatAddress(result.reward_address);
+        const opAddr = formatAddress(result.operational_address);
+        const staked = formatStrk(result.amount_own);
+        const unclaimed = formatStrk(result.unclaimed_rewards_own);
+
+        validatorData[name] = { rewardAddr, opAddr, staked, unclaimed, stakerAddress };
+
+        infoEl.innerHTML = `
+          <div class="row">
+            <span class="label">Staked</span>
+            <span class="value">${staked} STRK</span>
+          </div>
+          <div class="row">
+            <span class="label">Unclaimed Rewards</span>
+            <span class="value highlight">${unclaimed} STRK</span>
+          </div>
+          <div class="row">
+            <span class="label">Reward Address</span>
+            <span class="value address">${shortAddr(rewardAddr)}</span>
+          </div>
+        `;
+
+        claimBtn.disabled = !wallet;
+        claimBtn.textContent = `Claim ${unclaimed} STRK`;
+
+      } catch (e) {
+        infoEl.innerHTML = `<div class="status error">Failed to load: ${e.message}</div>`;
+      }
+    }
+
+    window.connectWallet = async function() {
+      const btn = document.getElementById('connect-btn');
+      btn.disabled = true;
+      btn.textContent = 'Connecting...';
+
+      try {
+        const starknet = await connect({ modalMode: 'alwaysAsk' });
+        if (!starknet) {
+          btn.disabled = false;
+          btn.textContent = 'Connect Wallet';
+          return;
+        }
+        await starknet.enable();
+        wallet = starknet;
+
+        btn.textContent = shortAddr(starknet.selectedAddress);
+
+        // Enable claim buttons
+        VALIDATORS.forEach(v => {
+          const claimBtn = document.getElementById(`claim-${v.name}`);
+          if (claimBtn && validatorData[v.name]) {
+            claimBtn.disabled = false;
+          }
+        });
+
+        showGlobalStatus('Wallet connected! You can now claim rewards.', 'success');
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Connect Wallet';
+        showGlobalStatus('Failed to connect: ' + e.message, 'error');
+      }
+    };
+
+    window.claimRewards = async function(name, stakerAddress) {
+      if (!wallet) {
+        showStatus(name, 'Connect wallet first', 'error');
+        return;
+      }
+
+      const claimBtn = document.getElementById(`claim-${name}`);
+      claimBtn.disabled = true;
+      claimBtn.textContent = 'Claiming...';
+      claimBtn.classList.add('claiming');
+
+      showStatus(name, 'Preparing transaction...', 'pending');
+
+      try {
+        const contract = new Contract(stakingAbi, STAKING_CONTRACT, wallet.account);
+        const call = contract.populate('claim_rewards', [stakerAddress]);
+
+        showStatus(name, 'Please approve in your wallet...', 'pending');
+        const result = await wallet.account.execute(call);
+
+        const txLink = `<a href="https://voyager.online/tx/${result.transaction_hash}" target="_blank">${result.transaction_hash.slice(0, 16)}...</a>`;
+        showStatus(name, `TX submitted: ${txLink} - waiting...`, 'pending');
+
+        await provider.waitForTransaction(result.transaction_hash);
+
+        showStatus(name, `Claimed! TX: ${txLink}`, 'success');
+
+        // Refresh info
+        await loadValidatorInfo(name, stakerAddress);
+
+      } catch (e) {
+        const errMsg = e.message || String(e);
+        if (errMsg.includes('staker address or reward address')) {
+          showStatus(name, 'Not authorized - must claim from reward address', 'error');
+        } else if (errMsg.includes('User abort')) {
+          showStatus(name, 'Transaction cancelled', 'info');
+        } else {
+          showStatus(name, 'Failed: ' + errMsg.slice(0, 100), 'error');
+        }
+      }
+
+      claimBtn.disabled = false;
+      claimBtn.classList.remove('claiming');
+      if (validatorData[name]) {
+        claimBtn.textContent = `Claim ${validatorData[name].unclaimed} STRK`;
+      }
+    };
+
+    function showStatus(name, message, type) {
+      document.getElementById(`status-${name}`).innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+
+    function showGlobalStatus(message, type) {
+      document.getElementById('global-status').innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+
+    // Wire up connect button
+    document.getElementById('connect-btn').onclick = connectWallet;
+
+    // Init on load
+    init();
+  </script>
+</body>
+</html>
