@@ -1,0 +1,7 @@
+node_modules
+web
+*.md
+.env*
+claim-rewards.js
+lookup-staker.js
+get-staking-summary.js

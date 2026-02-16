@@ -7,10 +7,13 @@
   "scripts": {
     "claim": "node claim-rewards.js",
     "claim:dry-run": "DRY_RUN=true node claim-rewards.js",
-    "web": "cd web && npm run dev"
+    "staking-data": "node get-staking-data.mjs",
+    "web": "cd web && npm run dev",
+    "docker:build": "docker build -t starknet-staking-reporter .",
+    "docker:run": "docker run --rm starknet-staking-reporter"
   },
   "dependencies": {
-    "starknet": "^6.11.0",
-    "dotenv": "^16.4.5"
+    "starknet": "6.11.0",
+    "dotenv": "16.4.5"
   }
 }

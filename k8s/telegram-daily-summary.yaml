@@ -15,9 +15,20 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          initContainers:
+          # Fetch staking data using the pre-built image
+          - name: get-staking-data
+            image: ghcr.io/trbiv/sn-vali-manager/staking-reporter:latest  # UPDATE with your actual repo
+            command: ["node", "get-staking-data.mjs"]
+            volumeMounts:
+            - name: staking-data
+              mountPath: /data
+            env:
+            - name: OUTPUT_FILE
+              value: /data/staking.json
           containers:
           - name: daily-summary
-            image: node:22-alpine
+            image: alpine:latest
             command: ["/bin/sh", "-c"]
             args:
               - |
@@ -28,8 +39,8 @@ spec:
                 CHAT_ID=$(cat /etc/telegram/chat-id)
                 DATE=$(date +"%b %d, %Y")
 
-                # Get staking data from mounted script
-                STAKING_DATA=$(node /scripts/get-staking-data.js 2>/dev/null || echo '{}')
+                # Read staking data from init container
+                STAKING_DATA=$(cat /data/staking.json 2>/dev/null || echo '{}')
 
                 # Parse staking data
                 SUFFIX_REWARDS=$(echo "$STAKING_DATA" | jq -r '.Suffix.unclaimed // "N/A"')
@@ -41,10 +52,6 @@ spec:
 
                 # Query Prometheus
                 query() {
-                  curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode "query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
-                }
-
-                query_avg() {
                   curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode "query=$1" | jq -r '.data.result[0].value[1] // "N/A"'
                 }
 
@@ -61,62 +68,30 @@ spec:
                 ETHCHI_UP=$(query 'up{job="ethchi-validator"}')
                 PATHFINDER_UP=$(query 'up{job="pathfinder"}')
 
-                # 24h uptime calculation (percentage of time up)
-                SUFFIX_UPTIME=$(query_avg 'avg_over_time(up{job="suffix-validator"}[24h]) * 100')
-                ETHCHI_UPTIME=$(query_avg 'avg_over_time(up{job="ethchi-validator"}[24h]) * 100')
+                # 24h uptime calculation
+                SUFFIX_UPTIME=$(query 'avg_over_time(up{job="suffix-validator"}[24h]) * 100')
+                ETHCHI_UPTIME=$(query 'avg_over_time(up{job="ethchi-validator"}[24h]) * 100')
 
-                # Performance metrics (24h average)
-                BLOCK_PROCESSING=$(query_avg 'avg_over_time(block_processing[24h])')
-                BLOCK_DOWNLOAD=$(query_avg 'avg_over_time(block_download[24h])')
+                # Performance metrics
+                BLOCK_PROCESSING=$(query 'avg_over_time(block_processing[24h])')
+                BLOCK_DOWNLOAD=$(query 'avg_over_time(block_download[24h])')
+                PATHFINDER_CPU=$(query 'rate(process_cpu_seconds_total{job="pathfinder"}[24h]) * 100')
 
-                # CPU usage (rate over 24h)
-                PATHFINDER_CPU=$(query_avg 'rate(process_cpu_seconds_total{job="pathfinder"}[24h]) * 100')
-
-                # Count alerts fired in last 24h
+                # Count alerts
                 ALERTS_COUNT=$(curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode 'query=count(ALERTS{alertstate="firing"})' | jq -r '.data.result[0].value[1] // "0"')
 
-                # Format status icons
-                format_status() {
-                  if [ "$1" = "1" ]; then echo "✅"; else echo "❌"; fi
-                }
-
+                # Format helpers
+                format_status() { [ "$1" = "1" ] && echo "✅" || echo "❌"; }
                 format_sync() {
-                  if [ "$1" = "N/A" ]; then
-                    echo "⚠️ Unknown"
-                  elif [ "$1" -le 5 ]; then
-                    echo "✅ Synced"
-                  elif [ "$1" -le 100 ]; then
-                    echo "⚠️ Catching up"
-                  else
-                    echo "❌ Behind"
-                  fi
+                  [ "$1" = "N/A" ] && echo "⚠️ Unknown" && return
+                  [ "$1" -le 5 ] && echo "✅ Synced" && return
+                  [ "$1" -le 100 ] && echo "⚠️ Catching up" && return
+                  echo "❌ Behind"
                 }
-
-                format_number() {
-                  if [ "$1" = "N/A" ]; then
-                    echo "N/A"
-                  else
-                    printf "%.1f" "$1" 2>/dev/null || echo "$1"
-                  fi
-                }
-
-                format_percent() {
-                  if [ "$1" = "N/A" ]; then
-                    echo "N/A"
-                  else
-                    printf "%.0f%%" "$1" 2>/dev/null || echo "$1"
-                  fi
-                }
+                format_number() { [ "$1" = "N/A" ] && echo "N/A" || printf "%.1f" "$1" 2>/dev/null || echo "$1"; }
+                format_percent() { [ "$1" = "N/A" ] && echo "N/A" || printf "%.0f%%" "$1" 2>/dev/null || echo "$1"; }
 
                 SYNC_STATUS=$(format_sync "$SYNC_LAG")
-                PATHFINDER_STATUS=$(format_status "$PATHFINDER_UP")
-                SUFFIX_STATUS=$(format_status "$SUFFIX_UP")
-                ETHCHI_STATUS=$(format_status "$ETHCHI_UP")
-
-                # Count online validators
-                ONLINE_COUNT=0
-                [ "$SUFFIX_UP" = "1" ] && ONLINE_COUNT=$((ONLINE_COUNT + 1))
-                [ "$ETHCHI_UP" = "1" ] && ONLINE_COUNT=$((ONLINE_COUNT + 1))
 
                 # Build message
                 MESSAGE="📊 <b>StarkNet Daily Report - ${DATE}</b>
@@ -125,9 +100,9 @@ spec:
                    Block: ${CURRENT_BLOCK%.*} / ${HIGHEST_BLOCK%.*} (lag: ${SYNC_LAG})
 
                 <b>Services:</b>
-                ${PATHFINDER_STATUS} Pathfinder
-                ${SUFFIX_STATUS} Suffix Validator ($(format_percent "$SUFFIX_UPTIME") uptime 24h)
-                ${ETHCHI_STATUS} Ethchi Validator ($(format_percent "$ETHCHI_UPTIME") uptime 24h)
+                $(format_status "$PATHFINDER_UP") Pathfinder
+                $(format_status "$SUFFIX_UP") Suffix Validator ($(format_percent "$SUFFIX_UPTIME") uptime 24h)
+                $(format_status "$ETHCHI_UP") Ethchi Validator ($(format_percent "$ETHCHI_UPTIME") uptime 24h)
 
                 💰 <b>Staking Rewards:</b>
                    Suffix: ${SUFFIX_REWARDS} STRK unclaimed
@@ -157,20 +132,19 @@ spec:
             - name: telegram-secrets
               mountPath: /etc/telegram
               readOnly: true
-            - name: scripts
-              mountPath: /scripts
+            - name: staking-data
+              mountPath: /data
               readOnly: true
             resources:
               requests:
-                memory: "128Mi"
-                cpu: "50m"
+                memory: "32Mi"
+                cpu: "10m"
               limits:
-                memory: "256Mi"
-                cpu: "200m"
+                memory: "64Mi"
+                cpu: "100m"
           volumes:
           - name: telegram-secrets
             secret:
               secretName: telegram-secrets
-          - name: scripts
-            configMap:
-              name: daily-summary-scripts
+          - name: staking-data
+            emptyDir: {}

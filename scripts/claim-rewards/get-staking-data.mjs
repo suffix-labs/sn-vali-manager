@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Output staking summary as JSON for use in daily reports
+ * Get staking data for daily summary
+ * Outputs JSON with unclaimed rewards and operational balances
  */
 
-import { RpcProvider, Contract } from 'starknet';
+import { Contract, RpcProvider } from 'starknet';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -42,56 +43,46 @@ const ERC20_ABI = [
 async function main() {
   const provider = new RpcProvider({ nodeUrl: RPC_URL });
 
-  // Load staking ABI from local file
+  // Load staking ABI from local file (baked into Docker image)
   const stakingAbi = JSON.parse(readFileSync(join(__dirname, 'staking-abi.json'), 'utf-8'));
 
   const stakingContract = new Contract(stakingAbi, STAKING_CONTRACT, provider);
   const strkContract = new Contract(ERC20_ABI, STRK_TOKEN, provider);
   const ethContract = new Contract(ERC20_ABI, ETH_TOKEN, provider);
 
-  const formatStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(2);
-
+  const toStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(2);
   const results = {};
 
   for (const v of VALIDATORS) {
     try {
-      // Get staking info
-      const stakerInfo = await stakingContract.staker_info_v1(v.staker);
-      const unclaimed = formatStrk(stakerInfo.unclaimed_rewards_own);
-      const staked = formatStrk(stakerInfo.amount_own);
-
-      // Get operational balances
+      const info = await stakingContract.staker_info_v1(v.staker);
       const strkBal = await strkContract.balanceOf(v.operational);
       const ethBal = await ethContract.balanceOf(v.operational);
 
-      results[v.name.toLowerCase()] = {
-        unclaimed_rewards: unclaimed,
-        staked: staked,
-        op_strk_balance: formatStrk(strkBal),
-        op_eth_balance: formatStrk(ethBal)
+      results[v.name] = {
+        unclaimed: toStrk(info.unclaimed_rewards_own),
+        staked: toStrk(info.amount_own),
+        strk: toStrk(strkBal),
+        eth: toStrk(ethBal)
       };
     } catch (e) {
-      results[v.name.toLowerCase()] = { error: e.message };
+      results[v.name] = { error: e.message };
     }
   }
 
-  // Output format based on arg
-  if (process.argv.includes('--json')) {
-    console.log(JSON.stringify(results));
+  const output = JSON.stringify(results);
+
+  // Write to file if OUTPUT_FILE is set, otherwise stdout
+  if (process.env.OUTPUT_FILE) {
+    const { writeFileSync } = await import('fs');
+    writeFileSync(process.env.OUTPUT_FILE, output);
+    console.log(`Wrote staking data to ${process.env.OUTPUT_FILE}`);
   } else {
-    // Human readable for Telegram
-    for (const [name, data] of Object.entries(results)) {
-      const label = name.charAt(0).toUpperCase() + name.slice(1);
-      if (data.error) {
-        console.log(`${label}: Error - ${data.error}`);
-      } else {
-        console.log(`${label}: ${data.unclaimed_rewards} STRK unclaimed | Op: ${data.op_strk_balance} STRK, ${data.op_eth_balance} ETH`);
-      }
-    }
+    console.log(output);
   }
 }
 
 main().catch(e => {
-  console.error(`Error: ${e.message}`);
+  console.error(JSON.stringify({ error: e.message }));
   process.exit(1);
 });
