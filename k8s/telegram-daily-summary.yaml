@@ -17,7 +17,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: daily-summary
-            image: alpine:latest
+            image: node:22-alpine
             command: ["/bin/sh", "-c"]
             args:
               - |
@@ -27,6 +27,17 @@ spec:
                 BOT_TOKEN=$(cat /etc/telegram/bot-token)
                 CHAT_ID=$(cat /etc/telegram/chat-id)
                 DATE=$(date +"%b %d, %Y")
+
+                # Get staking data from mounted script
+                STAKING_DATA=$(node /scripts/get-staking-data.js 2>/dev/null || echo '{}')
+
+                # Parse staking data
+                SUFFIX_REWARDS=$(echo "$STAKING_DATA" | jq -r '.Suffix.unclaimed // "N/A"')
+                SUFFIX_STRK_BAL=$(echo "$STAKING_DATA" | jq -r '.Suffix.strk // "N/A"')
+                SUFFIX_ETH_BAL=$(echo "$STAKING_DATA" | jq -r '.Suffix.eth // "N/A"')
+                ETHCHI_REWARDS=$(echo "$STAKING_DATA" | jq -r '.Ethchi.unclaimed // "N/A"')
+                ETHCHI_STRK_BAL=$(echo "$STAKING_DATA" | jq -r '.Ethchi.strk // "N/A"')
+                ETHCHI_ETH_BAL=$(echo "$STAKING_DATA" | jq -r '.Ethchi.eth // "N/A"')
 
                 # Query Prometheus
                 query() {
@@ -118,6 +129,14 @@ spec:
                 ${SUFFIX_STATUS} Suffix Validator ($(format_percent "$SUFFIX_UPTIME") uptime 24h)
                 ${ETHCHI_STATUS} Ethchi Validator ($(format_percent "$ETHCHI_UPTIME") uptime 24h)
 
+                💰 <b>Staking Rewards:</b>
+                   Suffix: ${SUFFIX_REWARDS} STRK unclaimed
+                   Ethchi: ${ETHCHI_REWARDS} STRK unclaimed
+
+                🏦 <b>Operational Balances:</b>
+                   Suffix: ${SUFFIX_STRK_BAL} STRK / ${SUFFIX_ETH_BAL} ETH
+                   Ethchi: ${ETHCHI_STRK_BAL} STRK / ${ETHCHI_ETH_BAL} ETH
+
                 ⚡ <b>Performance (24h avg):</b>
                    Block processing: $(format_number "$BLOCK_PROCESSING")s
                    Block download: $(format_number "$BLOCK_DOWNLOAD")s
@@ -138,14 +157,20 @@ spec:
             - name: telegram-secrets
               mountPath: /etc/telegram
               readOnly: true
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
             resources:
               requests:
-                memory: "32Mi"
-                cpu: "10m"
-              limits:
-                memory: "64Mi"
+                memory: "128Mi"
                 cpu: "50m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
           volumes:
           - name: telegram-secrets
             secret:
               secretName: telegram-secrets
+          - name: scripts
+            configMap:
+              name: daily-summary-scripts

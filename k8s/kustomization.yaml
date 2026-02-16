@@ -11,6 +11,7 @@ resources:
   - alertmanager-config.yaml
   - telegram-bot.yaml
   - telegram-daily-summary.yaml
+  - telegram-daily-summary-scripts.yaml
   - grafana-admin-deployment.yaml
   - grafana-admin-config.yaml
   - grafana-client-deployments.yaml
