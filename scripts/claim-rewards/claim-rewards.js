@@ -106,21 +106,40 @@ async function claimRewards(validator) {
     console.log(`  Checking unclaimed rewards...`);
     await checkUnclaimedRewards(provider, stakerAddress);
 
-    if (DRY_RUN) {
-      console.log(`  [DRY RUN] Would claim rewards for staker: ${stakerAddress}`);
-      return { validator: name, status: 'dry_run' };
-    }
-
     // Create account instance for the reward account (who will receive and can call claim)
     const account = new Account(provider, accountAddress, privateKey);
 
     // Create contract instance connected to the account
     const contract = new Contract(STAKING_ABI, STAKING_CONTRACT_ADDRESS, account);
 
-    console.log(`  Submitting claim_rewards transaction...`);
-
-    // Call claim_rewards with the staker address
+    // Prepare the call
     const call = contract.populate('claim_rewards', [stakerAddress]);
+
+    if (DRY_RUN) {
+      console.log(`  [DRY RUN] Simulating transaction...`);
+      try {
+        const simulation = await account.simulateTransaction([call], { skipValidate: false });
+        if (simulation[0]?.transaction_trace?.execute_invocation?.revert_reason) {
+          const reason = simulation[0].transaction_trace.execute_invocation.revert_reason;
+          console.log(`  [DRY RUN] WOULD FAIL: ${reason}`);
+          return { validator: name, status: 'dry_run_failed', error: reason };
+        }
+        console.log(`  [DRY RUN] Simulation SUCCESS - transaction would claim rewards`);
+        return { validator: name, status: 'dry_run_ok' };
+      } catch (simError) {
+        // Parse the error message for useful info
+        const errMsg = simError.message || String(simError);
+        if (errMsg.includes('staker address or reward address')) {
+          console.log(`  [DRY RUN] WOULD FAIL: Account ${accountAddress} is not authorized to claim`);
+          console.log(`            Only staker or reward address can claim rewards`);
+        } else {
+          console.log(`  [DRY RUN] WOULD FAIL: ${errMsg}`);
+        }
+        return { validator: name, status: 'dry_run_failed', error: errMsg };
+      }
+    }
+
+    console.log(`  Submitting claim_rewards transaction...`);
     const { transaction_hash } = await account.execute(call);
 
     console.log(`  Transaction submitted: ${transaction_hash}`);
@@ -167,7 +186,8 @@ async function main() {
   for (const result of results) {
     const statusEmoji = {
       success: '[OK]',
-      dry_run: '[DRY]',
+      dry_run_ok: '[DRY OK]',
+      dry_run_failed: '[DRY FAIL]',
       disabled: '[SKIP]',
       missing_staker_address: '[SKIP]',
       missing_credentials: '[SKIP]',
@@ -185,11 +205,17 @@ async function main() {
   }
 
   const successCount = results.filter(r => r.status === 'success').length;
+  const dryOkCount = results.filter(r => r.status === 'dry_run_ok').length;
+  const dryFailCount = results.filter(r => r.status === 'dry_run_failed').length;
   const errorCount = results.filter(r => ['error', 'reverted'].includes(r.status)).length;
 
-  console.log(`\nCompleted: ${successCount} successful, ${errorCount} errors`);
+  if (DRY_RUN) {
+    console.log(`\nDry run complete: ${dryOkCount} would succeed, ${dryFailCount} would fail`);
+  } else {
+    console.log(`\nCompleted: ${successCount} successful, ${errorCount} errors`);
+  }
 
-  // Exit with error code if any claims failed
+  // Exit with error code if any claims failed (not dry run failures)
   if (errorCount > 0) {
     process.exit(1);
   }
