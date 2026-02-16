@@ -20,7 +20,7 @@ dotenv.config({ path: join(__dirname, '../../.env') });
 // StarkNet Mainnet Staking Contract
 const STAKING_CONTRACT_ADDRESS = '0x00ca1702e64c81d9a07b86bd2c540188d92a2c73cf5cc0e508d949015e7e84a7';
 
-// Minimal ABI for the staking contract claim function
+// Minimal ABI for the staking contract
 const STAKING_ABI = [
   {
     name: 'claim_rewards',
@@ -30,14 +30,10 @@ const STAKING_ABI = [
     state_mutability: 'external'
   },
   {
-    name: 'staker_info',
+    name: 'staker_info_v1',
     type: 'function',
     inputs: [{ name: 'staker_address', type: 'core::starknet::contract_address::ContractAddress' }],
-    outputs: [
-      {
-        type: '(core::starknet::contract_address::ContractAddress, core::integer::u128, core::integer::u128, core::integer::u128)'
-      }
-    ],
+    outputs: [{ type: 'contracts::staking::objects::StakerInfoV1' }],
     state_mutability: 'view'
   }
 ];
@@ -72,10 +68,17 @@ async function getProvider() {
 async function checkUnclaimedRewards(provider, stakerAddress) {
   try {
     const contract = new Contract(STAKING_ABI, STAKING_CONTRACT_ADDRESS, provider);
-    const result = await contract.staker_info(stakerAddress);
-    // Result is a tuple: (reward_address, operational_address, stake, unclaimed_rewards, ...)
-    // The exact structure may vary - we'll handle it gracefully
-    console.log(`  Staker info response:`, result);
+    const result = await contract.staker_info_v1(stakerAddress);
+
+    // Format the output nicely
+    const formatAddress = (v) => '0x' + BigInt(v).toString(16).padStart(64, '0');
+    const formatStrk = (v) => (Number(BigInt(v)) / 1e18).toFixed(4) + ' STRK';
+
+    console.log(`  Reward Address: ${formatAddress(result.reward_address || result[0])}`);
+    console.log(`  Operational Address: ${formatAddress(result.operational_address || result[1])}`);
+    console.log(`  Stake: ${formatStrk(result.stake || result[2])}`);
+    console.log(`  Unclaimed Rewards: ${formatStrk(result.unclaimed_rewards || result[3])}`);
+
     return result;
   } catch (error) {
     console.log(`  Could not fetch staker info: ${error.message}`);
