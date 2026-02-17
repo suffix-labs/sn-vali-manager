@@ -15,10 +15,12 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          imagePullSecrets:
+          - name: ghcr-secret
           initContainers:
           # Fetch staking data using the pre-built image
           - name: get-staking-data
-            image: ghcr.io/trbiv/sn-vali-manager/staking-reporter:latest  # UPDATE with your actual repo
+            image: ghcr.io/suffix-labs/sn-vali-manager/staking-reporter:latest
             command: ["node", "get-staking-data.mjs"]
             volumeMounts:
             - name: staking-data
