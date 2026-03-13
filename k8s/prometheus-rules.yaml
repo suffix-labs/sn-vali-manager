@@ -25,6 +25,78 @@ data:
               summary: "Ethchi Validator is down"
               description: "Ethchi validator has been unreachable for more than 2 minutes."
 
+          - alert: SuffixValidatorLowBalance
+            expr: validator_attestation_operational_account_balance_strk{job="suffix-validator"} < 50
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Suffix Validator low STRK balance"
+              description: "Suffix validator operational account has only {{ $value | printf \"%.2f\" }} STRK remaining. Please top up to avoid signing failures."
+
+          - alert: EthchiValidatorLowBalance
+            expr: validator_attestation_operational_account_balance_strk{job="ethchi-validator"} < 50
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Ethchi Validator low STRK balance"
+              description: "Ethchi validator operational account has only {{ $value | printf \"%.2f\" }} STRK remaining. Please top up to avoid signing failures."
+
+          - alert: SuffixValidatorCriticalBalance
+            expr: validator_attestation_operational_account_balance_strk{job="suffix-validator"} < 10
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Suffix Validator critically low STRK balance"
+              description: "URGENT: Suffix validator has only {{ $value | printf \"%.2f\" }} STRK. Attestations will fail imminently!"
+
+          - alert: EthchiValidatorCriticalBalance
+            expr: validator_attestation_operational_account_balance_strk{job="ethchi-validator"} < 10
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Ethchi Validator critically low STRK balance"
+              description: "URGENT: Ethchi validator has only {{ $value | printf \"%.2f\" }} STRK. Attestations will fail imminently!"
+
+          - alert: SuffixValidatorAttestationFailures
+            expr: increase(validator_attestation_attestation_failure_count{job="suffix-validator"}[15m]) > 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Suffix Validator attestation failures detected"
+              description: "Suffix validator has had {{ $value | printf \"%.0f\" }} attestation failure(s) in the last 15 minutes. Check balance and node connectivity."
+
+          - alert: EthchiValidatorAttestationFailures
+            expr: increase(validator_attestation_attestation_failure_count{job="ethchi-validator"}[15m]) > 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Ethchi Validator attestation failures detected"
+              description: "Ethchi validator has had {{ $value | printf \"%.0f\" }} attestation failure(s) in the last 15 minutes. Check balance and node connectivity."
+
+          - alert: SuffixValidatorMissedEpochs
+            expr: increase(validator_attestation_missed_epochs_count{job="suffix-validator"}[1h]) > 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Suffix Validator missed epoch attestations"
+              description: "Suffix validator has missed {{ $value | printf \"%.0f\" }} epoch(s) in the last hour. This affects staking rewards!"
+
+          - alert: EthchiValidatorMissedEpochs
+            expr: increase(validator_attestation_missed_epochs_count{job="ethchi-validator"}[1h]) > 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Ethchi Validator missed epoch attestations"
+              description: "Ethchi validator has missed {{ $value | printf \"%.0f\" }} epoch(s) in the last hour. This affects staking rewards!"
+
       - name: pathfinder_alerts
         rules:
           - alert: PathfinderDown
